@@ -2,14 +2,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-
+import { useStateContext } from '@/components/StateProvaider'
+import Button from '@/components/ui/Button/Button'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isRegister, setIsRegister] = useState(false)
   const router = useRouter()
-
+  const { setToken } = useStateContext()
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -29,6 +30,8 @@ export default function LoginPage() {
 
       const { token } = await response.json()
       localStorage.setItem('token', token)
+
+      setToken(token)
       router.push('/events')
     } catch (err) {
       setError(
@@ -62,12 +65,11 @@ export default function LoginPage() {
             className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <button
+        {/* <button
           type="submit"
           className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600"
-        >
-          {isRegister ? 'Register' : 'Login'}
-        </button>
+        ></button> */}
+        <Button buttonText={isRegister ? 'Register' : 'Login'} buttonType="submit" />
       </form>
       <button
         onClick={() => setIsRegister(!isRegister)}

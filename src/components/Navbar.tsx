@@ -3,47 +3,31 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useStateContext } from '@/components/StateProvaider'
 
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
-
+  const { user, setToken, setUser } = useStateContext()
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        setIsAuthenticated(false)
-        setIsAdmin(false)
-        return
-      }
-
-      try {
-        const response = await fetch('/api/users/me', {
-          headers: { Authorization: `JWT ${token}` },
-        })
-        if (response.ok) {
-          const { user } = await response.json()
-          setIsAuthenticated(true)
-          setIsAdmin(user.role === 'admin')
-        } else {
-          setIsAuthenticated(false)
-          setIsAdmin(false)
-        }
-      } catch (err) {
-        setIsAuthenticated(false)
-        setIsAdmin(false)
-      }
+    if (user) {
+      setIsAuthenticated(true)
     }
+  }, [user])
 
-    checkAuth()
-  }, [])
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' })
+    } catch (err) {
+      console.error('Error logging out:', err)
+    }
+    setToken('')
+    setUser('')
     localStorage.removeItem('token')
     setIsAuthenticated(false)
     setIsAdmin(false)
-    router.push('/login')
+    router.push('/')
   }
 
   return (
@@ -53,7 +37,10 @@ export default function Navbar() {
           <Link href="/">My App</Link>
         </div>
         <div className="flex space-x-4">
-          <Link href="/" className="text-white hover:text-blue-200">
+          <Link
+            href="/"
+            className="text-white hover:text-blue-200 cursor-pointer transition-colors duration-200 ease-in-out"
+          >
             Home
           </Link>
           {isAuthenticated && (
@@ -66,8 +53,17 @@ export default function Navbar() {
               Admin
             </Link>
           )}
+          {isAuthenticated && (
+            <div className="flex items-center space-x-2">
+              <span>User:</span>
+              <h2 className="text-blue-200 font-bold lh-1">{user}</h2>
+            </div>
+          )}
           {isAuthenticated ? (
-            <button onClick={handleLogout} className="text-white hover:text-blue-200">
+            <button
+              onClick={handleLogout}
+              className="text-white hover:text-blue-200 cursor-pointer transition-colors duration-200 ease-in-out"
+            >
               Logout
             </button>
           ) : (
