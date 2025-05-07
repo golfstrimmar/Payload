@@ -63,6 +63,11 @@ export const Events: CollectionConfig = {
       required: true,
     },
     {
+      name: 'title',
+      type: 'text',
+      required: true,
+    },
+    {
       name: 'status',
       type: 'checkbox',
       defaultValue: false,

@@ -1,0 +1,38 @@
+@import '../../scss/common/colors';
+
+.modalmessage {
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, .9);
+  transform: scale(0);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  transition: all .5s;
+
+  &.run {
+    transform: scale(1);
+  }
+
+  &-inner {
+    background-color: whitesmoke;
+    width: 50vw;
+    text-align: center;
+    border-radius: 5px;
+
+
+    &- {}
+
+    &- {}
+  }
+
+  &-message {
+    color: $deep-blue;
+    font-style: italic;
+    padding: 20px 0;
+
+  }
+}
