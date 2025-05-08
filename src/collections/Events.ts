@@ -6,7 +6,6 @@ export const Events: CollectionConfig = {
     useAsTitle: 'content', // Поле content ("Gaby Level 5") как заголовок
   },
   access: {
-    // Только владелец (пользователь) может читать свои события
     read: ({ req: { user } }) => {
       if (!user) return false
       return {
@@ -15,7 +14,6 @@ export const Events: CollectionConfig = {
         },
       }
     },
-    // Только владелец может создавать, обновлять или удалять
     create: ({ req: { user } }) => !!user, // Только авторизованные
     update: ({ req: { user } }) => {
       if (!user) return false
@@ -40,9 +38,7 @@ export const Events: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users', // Связь с коллекцией users
       required: true,
-      // Автоматически задавать текущего пользователя при создании
       defaultValue: ({ user }) => user?.id,
-      // Скрыть поле в админке, так как оно заполняется автоматически
       admin: {
         hidden: true,
       },
@@ -53,7 +49,7 @@ export const Events: CollectionConfig = {
       required: true,
       admin: {
         date: {
-          pickerAppearance: 'dayAndTime', // Выбор даты и времени
+          pickerAppearance: 'dayAndTime',
         },
       },
     },
@@ -71,6 +67,19 @@ export const Events: CollectionConfig = {
       name: 'status',
       type: 'checkbox',
       defaultValue: false,
+    },
+    {
+      name: 'mediaUrls', // Обновлено на массив для хранения нескольких URL-ов
+      type: 'array',
+      required: false,
+      label: 'Event Media URLs', // Подсказка в админке
+      fields: [
+        {
+          name: 'url',
+          type: 'text',
+          label: 'Media URL',
+        },
+      ],
     },
   ],
 }

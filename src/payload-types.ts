@@ -163,6 +163,12 @@ export interface Event {
   content: string;
   title: string;
   status?: boolean | null;
+  mediaUrls?:
+    | {
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -271,6 +277,12 @@ export interface EventsSelect<T extends boolean = true> {
   content?: T;
   title?: T;
   status?: T;
+  mediaUrls?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
