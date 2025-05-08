@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { title } from 'process'
 import Button from '@/components/ui/Button/Button'
 import AddEventModal from '@/components/AddEventModal/AddEventModal'
+import { useStateContext } from '@/components/StateProvaider'
+
 interface Event {
   id: string
   title: string
@@ -18,10 +20,18 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showAdminLink, setShowAdminLink] = useState(false)
-  const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null)
+  const { user, role } = useStateContext()
+  // const [showAdminLink, setShowAdminLink] = useState(false)
+  // const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null)
   const router = useRouter()
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (role) {
+      console.log('<==== role====>', role)
+    }
+  }, [role])
+
   useEffect(() => {
     const fetchEvents = async () => {
       const token = localStorage.getItem('token')
@@ -31,14 +41,6 @@ export default function EventsPage() {
       }
 
       try {
-        const userResponse = await fetch('/api/users/me', {
-          headers: { Authorization: `JWT ${token}` },
-        })
-        if (!userResponse.ok) throw new Error('Failed to fetch user')
-        const { user } = await userResponse.json()
-        setCurrentUser(user)
-        setShowAdminLink(user.role === 'admin')
-
         const eventsResponse = await fetch('/api/events', {
           headers: { Authorization: `JWT ${token}` },
         })
@@ -50,7 +52,7 @@ export default function EventsPage() {
           docs.map((event: Event) => ({
             ...event,
             date: new Date(event.date).toLocaleString('en-US', { timeZone: 'Europe/Berlin' }),
-            user: event.user?.email,
+            user: user,
           })),
         )
       } catch (err) {
@@ -80,7 +82,7 @@ export default function EventsPage() {
 
       if (!response.ok) throw new Error('Failed to delete event')
       setEvents(events.filter((event) => event.id !== id))
-    } catch (err) {
+    } catch (error) {
       setError('Error deleting event')
     }
   }
@@ -90,12 +92,15 @@ export default function EventsPage() {
 
   return (
     <div className=" mx-4 mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-center">Your Events</h1>
+      <h2 className="text-center text-2xl font-bold mb-6">Your Events</h2>
       <div className="flex flex-col mb-6 items-center gap-2">
-        <p className="text-gray-600">
-          You are logged in as: <strong>{currentUser?.email}</strong>{' '}
+        <p className="text-gray-600 ">
+          You are logged in as: <strong>{user}</strong>
         </p>
-        {showAdminLink && (
+        <p className="text-gray-600">
+          You role: <strong>{role}</strong>
+        </p>
+        {role === 'admin' && (
           <a href="/admin" className="text-blue-500 hover:underline">
             Go to Admin
           </a>
@@ -112,7 +117,7 @@ export default function EventsPage() {
         <AddEventModal
           setEvents={setEvents}
           setShowCreateModal={setShowCreateModal}
-          currentUser={currentUser}
+          currentUser={user}
           events={events}
         />
       )}

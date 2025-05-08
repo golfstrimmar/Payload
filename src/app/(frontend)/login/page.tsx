@@ -65,10 +65,6 @@ export default function LoginPage() {
             className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        {/* <button
-          type="submit"
-          className="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600"
-        ></button> */}
         <Button buttonText={isRegister ? 'Register' : 'Login'} buttonType="submit" />
       </form>
       <button

@@ -12,7 +12,7 @@ export default async function HomePage() {
   const payloadConfig = await config
   const payload = await getPayload({ config: payloadConfig })
   const { user } = await payload.auth({ headers })
-
+  console.log('<==== user =======>', user)
   // Получаем пользователей
   const users = await payload.find({
     collection: 'users',
@@ -43,11 +43,11 @@ export default async function HomePage() {
         {!user && <h1>Welcome to your new project.</h1>}
         {user && <h1>Welcome back, {user.email}</h1>}
 
-        <section className="data-section">
-          <h2>Users</h2>
-          <div className="users-grid">
+        <section className="w-full shadow-[0px_0px_4px_rgba(0,0,0,0.25)] rounded-sm p-2">
+          <h2 className="text-2xl font-bold">Users</h2>
+          <div className=" flex flex-col  w-full">
             {users.docs.map((user) => (
-              <div key={user.id} className="user-card">
+              <div key={user.id} className="m-4   p-2 bg-white rounded-lg shadow-md">
                 <h3>{user.email}</h3>
                 <p>ID: {user.id}</p>
                 {user.role && <p>Role: {user.role}</p>}
@@ -56,11 +56,11 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="data-section">
-          <h2>Media Files</h2>
-          <div className="media-grid">
+        <section className="w-full mt-4 mb-4 shadow-[0px_0px_4px_rgba(0,0,0,0.25)] rounded-sm p-2">
+          <h2 className="text-2xl font-bold">Media Files</h2>
+          <div className="w-full flex flex-col p-2">
             {media.docs.map((file) => (
-              <div key={file.id} className="media-card">
+              <div key={file.id} className="flex gap-8">
                 {file.mimeType?.includes('image') ? (
                   <Image
                     src={file.url}

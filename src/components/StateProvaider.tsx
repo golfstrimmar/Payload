@@ -6,12 +6,15 @@ interface StateContextType {
   setUser: React.Dispatch<React.SetStateAction<string>>
   token: string
   setToken: React.Dispatch<React.SetStateAction<string>>
+  role: string
+  setRole: React.Dispatch<React.SetStateAction<string>>
 }
 
 const StateContext = createContext<StateContextType | undefined>(undefined)
 
 export function StateProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<string>('')
+  const [role, setRole] = useState<string>('')
   const [token, setToken] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('token') || ''
@@ -28,6 +31,9 @@ export function StateProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('token')
       }
     }
+    if (token) {
+      console.log('<==== token provider=======>', token)
+    }
   }, [token])
 
   // Проверка авторизации
@@ -38,16 +44,15 @@ export function StateProvider({ children }: { children: ReactNode }) {
         setUser('')
         return
       }
-
-      console.log('<==== Token ====>', token)
       try {
         const response = await fetch('/api/users/me', {
           headers: { Authorization: `JWT ${token}` },
         })
         if (response.ok) {
           const { user } = await response.json()
-          console.log('<==== User ====>', user)
+          console.log('<==== User провайдер====>', user)
           setUser(user?.email || '')
+          setRole(user?.role || '')
         } else {
           console.error('Failed to fetch user:', response.status, response.statusText)
           setUser('')
@@ -62,7 +67,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
   }, [token])
 
   return (
-    <StateContext.Provider value={{ user, setUser, token, setToken }}>
+    <StateContext.Provider value={{ user, setUser, token, setToken, role }}>
       {children}
     </StateContext.Provider>
   )
