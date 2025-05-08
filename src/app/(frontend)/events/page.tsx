@@ -6,6 +6,7 @@ import { title } from 'process'
 import Button from '@/components/ui/Button/Button'
 import AddEventModal from '@/components/AddEventModal/AddEventModal'
 import { useStateContext } from '@/components/StateProvaider'
+import EditEventModal from '@/components/EditEventModal'
 import Image from 'next/image'
 interface Event {
   id: string
@@ -21,10 +22,12 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const { user, role, token } = useStateContext()
+  const { user, role, token, ID } = useStateContext()
   const router = useRouter()
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
   const [run, setRun] = useState<number>(null)
+  const [showEditModal, setShowEditModal] = useState<boolean>(false)
+  const [editingEvent, setEditingEvent] = useState<Event>(null)
   useEffect(() => {
     if (events) {
       console.log('<==== events====>', events)
@@ -33,12 +36,6 @@ export default function EventsPage() {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      // const token = localStorage.getItem('token')
-      // if (!token) {
-      //   router.push('/login')
-      //   return
-      // }
-
       try {
         const eventsResponse = await fetch('/api/events', {
           headers: { Authorization: `JWT ${token}` },
@@ -85,12 +82,24 @@ export default function EventsPage() {
       setError('Error deleting event')
     }
   }
+  const handleEditEvent = (event: Event) => {
+    console.log('Setting editingEvent:', event)
+    setEditingEvent(event)
+    setShowEditModal(true)
+  }
 
   if (loading) return <p className="text-center mt-10">Loading...</p>
   if (error) return <p className="text-red-500 text-center mt-10">{error}</p>
 
   return (
     <div className=" mx-4 mt-10 p-6 bg-white rounded-lg shadow-md">
+      {showEditModal && editingEvent && (
+        <EditEventModal
+          setEvents={setEvents}
+          setShowEditModal={setShowEditModal}
+          event={editingEvent}
+        />
+      )}
       <h2 className="text-center text-2xl font-bold mb-6">Your Events</h2>
       <div className="flex flex-col mb-6 items-center gap-2">
         <p className="text-gray-600 ">
@@ -170,6 +179,11 @@ export default function EventsPage() {
                     Status: ({event.status ? 'Active' : 'Inactive'})
                   </p>
                   <div className="mt-auto">
+                    <Button
+                      buttonText="Edit"
+                      buttonType="text"
+                      onClick={() => handleEditEvent(event)}
+                    />
                     <Button
                       buttonText="Delete"
                       buttonType="text"

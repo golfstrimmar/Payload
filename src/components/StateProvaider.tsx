@@ -8,11 +8,14 @@ interface StateContextType {
   setToken: React.Dispatch<React.SetStateAction<string>>
   role: string
   setRole: React.Dispatch<React.SetStateAction<string>>
+  ID: string
+  setID: React.Dispatch<React.SetStateAction<string>>
 }
 
 const StateContext = createContext<StateContextType | undefined>(undefined)
 
 export function StateProvider({ children }: { children: ReactNode }) {
+  const [ID, setID] = useState<string>('')
   const [user, setUser] = useState<string>('')
   const [role, setRole] = useState<string>('')
   const [token, setToken] = useState<string>(() => {
@@ -53,6 +56,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
           console.log('<==== User провайдер====>', user)
           setUser(user?.email || '')
           setRole(user?.role || '')
+          setID(user?.id || '')
         } else {
           console.error('Failed to fetch user:', response.status, response.statusText)
           setUser('')
@@ -67,7 +71,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
   }, [token])
 
   return (
-    <StateContext.Provider value={{ user, setUser, token, setToken, role }}>
+    <StateContext.Provider value={{ user, setUser, token, setToken, role, ID }}>
       {children}
     </StateContext.Provider>
   )
