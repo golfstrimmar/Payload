@@ -4,9 +4,11 @@ import styles from './AddEventModal.module.scss'
 import Input from '@/components/ui/Input/Input'
 import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button/Button'
-import ModalMessage from '@/components/ModalMessage/ModalMessage'
 import Image from 'next/image'
-
+import Loading from '@/components/Loading/Loading'
+import { useStateContext } from '@/components/StateProvaider'
+import toast, { Toaster } from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 interface Event {
   id: string
   title: string
@@ -39,10 +41,9 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     status: false,
     mediaUrls: [] as string[], // Новое поле для хранения URLs медиафайлов
   })
-  const [showModal, setShowModal] = useState<boolean>(false)
-  const [error, setError] = useState<string>('')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]) // Хранение выбранных файлов
   const [imagePreviews, setImagePreviews] = useState<string[]>([]) // Превью изображений
+  const { isLoading, setIsLoading } = useStateContext()
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -55,9 +56,21 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       console.log('Selected files:', filesArray) // Логируем выбранные файлы
     }
   }
-
+  const handleRemoveNewImage = (previewToRemove: string) => {
+    setImagePreviews((prev) => prev.filter((preview) => preview !== previewToRemove))
+    setSelectedFiles((prev) => {
+      const index = imagePreviews.indexOf(previewToRemove)
+      if (index !== -1) {
+        const newFiles = [...prev]
+        newFiles.splice(index, 1)
+        return newFiles
+      }
+      return prev
+    })
+  }
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
     const token = localStorage.getItem('token')
     if (!token) {
       console.log('No token found, redirecting to login...')
@@ -116,7 +129,10 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       if (!response.ok) {
         const errorData = await response.json()
         console.error('Error response:', errorData)
+        toast.error('Failed to create event')
         throw new Error(`Failed to create event: ${errorData.message || response.statusText}`)
+      } else {
+        toast.success('Event created successfully')
       }
 
       const createdEvent = await response.json()
@@ -132,117 +148,146 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 
       setEvents([...events, normalizedEvent])
       setNewEvent({ date: '', title: '', content: '', user: '', status: false, mediaUrls: [] })
+
       setSelectedFiles([]) // Очистить выбранные файлы
       setImagePreviews([]) // Очистить превью
+      setShowCreateModal(false)
+      setIsLoading(false)
+      setTimeout(() => {
+        toast.dismiss()
+      }, 1500)
     } catch (err: any) {
       console.error('Error in handleCreateEvent:', err.message)
-      setError(err.message || 'Error creating event')
-      setShowModal(true)
-      setTimeout(() => {
-        setShowModal(false)
-        setError('')
-      }, 1500)
+      toast.error('Error creating event')
     } finally {
-      setShowCreateModal(false)
+      setTimeout(() => {
+        toast.dismiss()
+        setIsLoading(false)
+      }, 1500)
     }
   }
 
   return (
-    <div className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4">
-      <form
-        onSubmit={handleCreateEvent}
-        className="w-full relative mb-8 bg-white border border-gray-300 rounded-lg p-4"
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4"
       >
-        <Image
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowCreateModal(false)
-          }}
-          src="/assets/svg/cross.svg"
-          alt="cross"
-          width={100}
-          height={100}
-          className="absolute top-4 right-4 cursor-pointer z-50 w-6 h-6 border border-gray-300 rounded-full p-1 hover:bg-gray-200 shadow-inner shadow-md transition-all duration-200 ease-in-out"
-        />
-        {error && <ModalMessage message={error} open={showModal} />}
-        <h2 className="text-xl font-semibold mb-4">Create New Event</h2>
-
-        <div className="mb-4">
-          <Input
-            typeInput="text"
-            id="title"
-            data="Title"
-            name="title"
-            value={newEvent.title}
-            onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <Input
-            typeInput="text"
-            id="Content"
-            data="Content"
-            name="Content"
-            value={newEvent.content}
-            onChange={(e) => setNewEvent({ ...newEvent, content: e.target.value })}
-            required
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Date</label>
-          <input
-            type="datetime-local"
-            value={newEvent.date}
-            onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-            required
-            className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              checked={newEvent.status}
-              onChange={(e) => setNewEvent({ ...newEvent, status: e.target.checked })}
-              className="mr-2"
+        {isLoading && <Loading />}
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <motion.div
+          initial={{ scale: 0, y: 0 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.9, y: 20 }}
+          className="w-full max-w-2xl"
+        >
+          <form
+            onSubmit={handleCreateEvent}
+            className="w-full relative mb-8 bg-white border border-gray-300 rounded-lg p-4"
+          >
+            <Image
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowCreateModal(false)
+              }}
+              src="/assets/svg/cross.svg"
+              alt="cross"
+              width={100}
+              height={100}
+              className="absolute top-4 right-4 cursor-pointer z-50 w-6 h-6 border border-gray-300 rounded-full p-1 hover:bg-gray-200 shadow-inner shadow-md transition-all duration-200 ease-in-out"
             />
-            <span className="text-sm font-medium text-gray-700">Active</span>
-          </label>
-        </div>
+            <h2 className="text-xl font-semibold mb-4">Create New Event</h2>
 
-        {/* Инпут для загрузки файлов */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Media</label>
-          <input
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+            <div className="mb-4">
+              <Input
+                typeInput="text"
+                id="title"
+                data="Title"
+                name="title"
+                value={newEvent.title}
+                onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                required
+              />
+            </div>
 
-        {/* Превью изображений */}
-        {imagePreviews.length > 0 && (
-          <div className="mb-4 flex space-x-4">
-            {imagePreviews.map((preview, index) => (
-              <div key={index} className="w-24 h-24 bg-gray-200 p-2 rounded-md">
-                <img
-                  src={preview}
-                  alt={`Preview ${index}`}
-                  className="w-full h-full object-cover"
+            <div className="mb-4">
+              <Input
+                typeInput="text"
+                id="Content"
+                data="Content"
+                name="Content"
+                value={newEvent.content}
+                onChange={(e) => setNewEvent({ ...newEvent, content: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Date</label>
+              <input
+                type="datetime-local"
+                value={newEvent.date}
+                onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                required
+                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={newEvent.status}
+                  onChange={(e) => setNewEvent({ ...newEvent, status: e.target.checked })}
+                  className="mr-2"
                 />
-              </div>
-            ))}
-          </div>
-        )}
+                <span className="text-sm font-medium text-gray-700">Active</span>
+              </label>
+            </div>
 
-        <Button buttonText="Create Event" buttonType="submit" />
-      </form>
-    </div>
+            {/* Инпут для загрузки файлов */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Media</label>
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Превью изображений */}
+            {imagePreviews.length > 0 && (
+              <div className="mb-4 flex space-x-4">
+                {imagePreviews.map((preview, index) => (
+                  <div
+                    key={index}
+                    className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden"
+                  >
+                    <img
+                      src={preview}
+                      alt={`Preview ${index}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveNewImage(preview)}
+                      className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button buttonText="Create Event" buttonType="submit" />
+          </form>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   )
 }
 

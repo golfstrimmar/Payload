@@ -10,6 +10,8 @@ interface StateContextType {
   setRole: React.Dispatch<React.SetStateAction<string>>
   ID: string
   setID: React.Dispatch<React.SetStateAction<string>>
+  isLoading: boolean
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const StateContext = createContext<StateContextType | undefined>(undefined)
@@ -24,7 +26,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
     }
     return ''
   })
-
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   // Синхронизация token с localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -71,7 +73,9 @@ export function StateProvider({ children }: { children: ReactNode }) {
   }, [token])
 
   return (
-    <StateContext.Provider value={{ user, setUser, token, setToken, role, ID }}>
+    <StateContext.Provider
+      value={{ user, setUser, token, setToken, role, ID, isLoading, setIsLoading }}
+    >
       {children}
     </StateContext.Provider>
   )

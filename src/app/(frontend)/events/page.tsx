@@ -5,9 +5,14 @@ import { useRouter } from 'next/navigation'
 import { title } from 'process'
 import Button from '@/components/ui/Button/Button'
 import AddEventModal from '@/components/AddEventModal/AddEventModal'
-import { useStateContext } from '@/components/StateProvaider'
 import EditEventModal from '@/components/EditEventModal'
 import Image from 'next/image'
+import { useStateContext } from '@/components/StateProvaider'
+import toast, { Toaster } from 'react-hot-toast'
+import Loading from '@/components/Loading/Loading'
+import { AnimatePresence } from 'framer-motion'
+import Link from 'next/link'
+
 interface Event {
   id: string
   title: string
@@ -20,19 +25,26 @@ interface Event {
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
-  const [loading, setLoading] = useState(true)
+
   const [error, setError] = useState('')
-  const { user, role, token, ID } = useStateContext()
+  const { user, role, token, ID, isLoading, setIsLoading } = useStateContext()
   const router = useRouter()
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
   const [run, setRun] = useState<number>(null)
   const [showEditModal, setShowEditModal] = useState<boolean>(false)
   const [editingEvent, setEditingEvent] = useState<Event>(null)
+
+  const handleAdminClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    router.push('/admin').then(() => {
+      setIsLoading(false)
+    })
+  }
+
   useEffect(() => {
-    if (events) {
-      console.log('<==== events====>', events)
-    }
-  }, [events])
+    setIsLoading(true)
+  }, [])
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -52,9 +64,9 @@ export default function EventsPage() {
           })),
         )
       } catch (err) {
-        setError('Error fetching data')
+        toast.error('Error fetching data')
       } finally {
-        setLoading(false)
+        setIsLoading(false)
       }
     }
 
@@ -62,6 +74,7 @@ export default function EventsPage() {
   }, [router])
 
   const handleDeleteEvent = async (id: string) => {
+    setIsLoading(true)
     const token = localStorage.getItem('token')
     if (!token) {
       router.push('/login')
@@ -76,10 +89,16 @@ export default function EventsPage() {
         },
       })
 
-      if (!response.ok) throw new Error('Failed to delete event')
+      if (!response.ok) {
+        toast.error('Failed to delete event')
+      } else {
+        setIsLoading(false)
+        toast.success('Event deleted successfully')
+      }
       setEvents(events.filter((event) => event.id !== id))
     } catch (error) {
-      setError('Error deleting event')
+      setIsLoading(false)
+      toast.error('Error deleting event')
     }
   }
   const handleEditEvent = (event: Event) => {
@@ -88,18 +107,21 @@ export default function EventsPage() {
     setShowEditModal(true)
   }
 
-  if (loading) return <p className="text-center mt-10">Loading...</p>
   if (error) return <p className="text-red-500 text-center mt-10">{error}</p>
 
   return (
     <div className=" mx-4 mt-10 p-6 bg-white rounded-lg shadow-md">
-      {showEditModal && editingEvent && (
-        <EditEventModal
-          setEvents={setEvents}
-          setShowEditModal={setShowEditModal}
-          event={editingEvent}
-        />
-      )}
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+      {isLoading && <Loading />}
+      <AnimatePresence>
+        {showEditModal && editingEvent && (
+          <EditEventModal
+            setEvents={setEvents}
+            setShowEditModal={setShowEditModal}
+            event={editingEvent}
+          />
+        )}
+      </AnimatePresence>
       <h2 className="text-center text-2xl font-bold mb-6">Your Events</h2>
       <div className="flex flex-col mb-6 items-center gap-2">
         <p className="text-gray-600 ">
@@ -109,9 +131,9 @@ export default function EventsPage() {
           You role: <strong>{role}</strong>
         </p>
         {role === 'admin' && (
-          <a href="/admin" className="text-blue-500 hover:underline">
+          <Link href="/admin" className="text-blue-500 hover:underline" onClick={handleAdminClick}>
             Go to Admin
-          </a>
+          </Link>
         )}
       </div>
       <div className="my-4 text-center">
@@ -121,14 +143,16 @@ export default function EventsPage() {
           buttonType="button"
         />
       </div>
-      {showCreateModal && (
-        <AddEventModal
-          setEvents={setEvents}
-          setShowCreateModal={setShowCreateModal}
-          currentUser={user}
-          events={events}
-        />
-      )}
+      <AnimatePresence>
+        {showCreateModal && (
+          <AddEventModal
+            setEvents={setEvents}
+            setShowCreateModal={setShowCreateModal}
+            currentUser={user}
+            events={events}
+          />
+        )}
+      </AnimatePresence>
 
       {events.length === 0 ? (
         <p className="text-center text-gray-500">No events found.</p>
@@ -178,16 +202,22 @@ export default function EventsPage() {
                   <p className="text-sm text-gray-600">
                     Status: ({event.status ? 'Active' : 'Inactive'})
                   </p>
-                  <div className="mt-auto">
-                    <Button
-                      buttonText="Edit"
-                      buttonType="text"
+                  <div className="mt-auto flex gap-2">
+                    <Image
                       onClick={() => handleEditEvent(event)}
+                      src="/assets/svg/edit.svg"
+                      width={20}
+                      height={20}
+                      alt="edit"
+                      className="cursor-pointer hover:scale-110 transition-all duration-200"
                     />
-                    <Button
-                      buttonText="Delete"
-                      buttonType="text"
+                    <Image
                       onClick={() => handleDeleteEvent(event.id)}
+                      src="/assets/svg/cross.svg"
+                      width={20}
+                      height={20}
+                      alt="delete"
+                      className="cursor-pointer hover:scale-110 transition-all duration-200"
                     />
                   </div>
                 </div>

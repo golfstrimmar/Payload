@@ -4,19 +4,21 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useStateContext } from '@/components/StateProvaider'
 import Button from '@/components/ui/Button/Button'
+import Loading from '@/components/Loading/Loading'
+import toast, { Toaster } from 'react-hot-toast'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isRegister, setIsRegister] = useState(false)
   const router = useRouter()
-  const { setToken } = useStateContext()
+  const { setToken, isLoading, setIsLoading } = useStateContext()
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     const endpoint = isRegister ? '/api/users' : '/api/users/login'
     const payload = isRegister ? { email, password, role: 'user' } : { email, password }
-
+    setIsLoading(true)
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -30,18 +32,24 @@ export default function LoginPage() {
 
       const { token } = await response.json()
       localStorage.setItem('token', token)
-
+      toast.success('Login successful.')
       setToken(token)
-      router.push('/events')
+      setTimeout(() => {
+        router.push('/events')
+      }, 1000)
     } catch (err) {
-      setError(
+      toast.error(
         isRegister ? 'Registration failed. Email may be taken.' : 'Invalid email or password.',
       )
+    } finally {
+      setIsLoading(false)
     }
   }
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+      {isLoading && <Loading />}
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       <h1 className="text-2xl font-bold mb-6">{isRegister ? 'Register' : 'Login'}</h1>
       {error && <p className="text-red-500 mb-4">{error}</p>}
       <form onSubmit={handleSubmit}>
@@ -69,7 +77,7 @@ export default function LoginPage() {
       </form>
       <button
         onClick={() => setIsRegister(!isRegister)}
-        className="mt-4 w-full text-blue-500 hover:underline"
+        className="mt-4 w-full text-blue-500 hover:underline cursor-pointer"
       >
         Switch to {isRegister ? 'Login' : 'Register'}
       </button>
