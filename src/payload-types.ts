@@ -169,6 +169,16 @@ export interface Event {
         id?: string | null;
       }[]
     | null;
+  location?: {
+    /**
+     * Click on the map to set location
+     *
+     * @minItems 2
+     * @maxItems 2
+     */
+    coordinates?: [number, number] | null;
+    address?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -282,6 +292,12 @@ export interface EventsSelect<T extends boolean = true> {
     | {
         url?: T;
         id?: T;
+      };
+  location?:
+    | T
+    | {
+        coordinates?: T;
+        address?: T;
       };
   updatedAt?: T;
   createdAt?: T;

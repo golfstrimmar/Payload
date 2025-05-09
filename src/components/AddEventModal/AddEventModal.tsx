@@ -9,6 +9,12 @@ import Loading from '@/components/Loading/Loading'
 import { useStateContext } from '@/components/StateProvaider'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import EventMap from '@/components/EventMap'
+import dynamic from 'next/dynamic'
+const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
+  ssr: false,
+  loading: () => <div className="h-64 bg-gray-100 animate-pulse" />,
+})
 interface Event {
   id: string
   title: string
@@ -17,6 +23,13 @@ interface Event {
   status: boolean
   user?: string
   mediaUrls?: string[] // Добавим сюда URLs медиафайлов
+  location?: {
+    coordinates?: {
+      type: 'Point'
+      coordinates: [number, number] // [lng, lat]
+    }
+    address?: string
+  }
 }
 
 interface AddEventModalProps {
@@ -44,6 +57,10 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]) // Хранение выбранных файлов
   const [imagePreviews, setImagePreviews] = useState<string[]>([]) // Превью изображений
   const { isLoading, setIsLoading } = useStateContext()
+  const [location, setLocation] = useState<{
+    coordinates: [number, number]
+    address: string
+  } | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -123,6 +140,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           date: date.toISOString(),
           user: currentUser?.id,
           mediaUrls: mediaUrls.map((url) => ({ url })),
+          location,
         }),
       })
 
@@ -181,7 +199,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           initial={{ scale: 0, y: 0 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
-          className="w-full max-w-2xl"
+          className="w-full max-w-[95%] overflow-y-auto h-[95vh]"
         >
           <form
             onSubmit={handleCreateEvent}
@@ -199,7 +217,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               className="absolute top-4 right-4 cursor-pointer z-50 w-6 h-6 border border-gray-300 rounded-full p-1 hover:bg-gray-200 shadow-inner shadow-md transition-all duration-200 ease-in-out"
             />
             <h2 className="text-xl font-semibold mb-4">Create New Event</h2>
-
             <div className="mb-4">
               <Input
                 typeInput="text"
@@ -211,7 +228,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 required
               />
             </div>
-
             <div className="mb-4">
               <Input
                 typeInput="text"
@@ -223,7 +239,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 required
               />
             </div>
-
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Date</label>
               <input
@@ -234,7 +249,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
             <div className="mb-4">
               <label className="flex items-center">
                 <input
@@ -246,7 +260,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 <span className="text-sm font-medium text-gray-700">Active</span>
               </label>
             </div>
-
             {/* Инпут для загрузки файлов */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Media</label>
@@ -257,7 +270,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
             {/* Превью изображений */}
             {imagePreviews.length > 0 && (
               <div className="mb-4 flex space-x-4">
@@ -282,7 +294,25 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 ))}
               </div>
             )}
-
+            {/* Location */}
+            <div className="mb-4 h-164 w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Location
+              </label>
+              <EventMap
+                interactive
+                onLocationSelect={(coords) => {
+                  setLocation({
+                    coordinates: coords,
+                    address: '',
+                  })
+                }}
+                selectedLocation={location?.coordinates}
+              />
+              {location && (
+                <div className="mt-2 text-sm">Selected: {location.coordinates.join(', ')}</div>
+              )}
+            </div>
             <Button buttonText="Create Event" buttonType="submit" />
           </form>
         </motion.div>

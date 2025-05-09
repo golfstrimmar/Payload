@@ -81,5 +81,24 @@ export const Events: CollectionConfig = {
         },
       ],
     },
+    {
+      name: 'location',
+      type: 'group',
+      fields: [
+        {
+          name: 'coordinates',
+          type: 'point', // Специальный тип для геоданных в Payload
+          required: false,
+          admin: {
+            description: 'Click on the map to set location',
+          },
+        },
+        {
+          name: 'address',
+          type: 'text',
+          required: false,
+        },
+      ],
+    },
   ],
 }

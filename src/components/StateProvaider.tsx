@@ -12,11 +12,14 @@ interface StateContextType {
   setID: React.Dispatch<React.SetStateAction<string>>
   isLoading: boolean
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  length: number
+  setLength: React.Dispatch<React.SetStateAction<number>>
 }
 
 const StateContext = createContext<StateContextType | undefined>(undefined)
 
 export function StateProvider({ children }: { children: ReactNode }) {
+  const [length, setLength] = useState<number>(0)
   const [ID, setID] = useState<string>('')
   const [user, setUser] = useState<string>('')
   const [role, setRole] = useState<string>('')
@@ -74,7 +77,16 @@ export function StateProvider({ children }: { children: ReactNode }) {
 
   return (
     <StateContext.Provider
-      value={{ user, setUser, token, setToken, role, ID, isLoading, setIsLoading }}
+      value={{
+        user,
+        setUser,
+        token,
+        setToken,
+        role,
+        ID,
+        isLoading,
+        setIsLoading,
+      }}
     >
       {children}
     </StateContext.Provider>

@@ -12,7 +12,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import Loading from '@/components/Loading/Loading'
 import { AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-
+import EventMap from '@/components/EventMap'
 interface Event {
   id: string
   title: string
@@ -21,13 +21,20 @@ interface Event {
   status: boolean
   user?: string
   mediaUrls?: string[]
+  location?: {
+    coordinates?: {
+      type: 'Point'
+      coordinates: [number, number] // [lng, lat]
+    }
+    address?: string
+  }
 }
 
 export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([])
 
   const [error, setError] = useState('')
-  const { user, role, token, ID, isLoading, setIsLoading } = useStateContext()
+  const { user, role, token, ID, isLoading, setIsLoading, length, setLength } = useStateContext()
   const router = useRouter()
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
   const [run, setRun] = useState<number>(null)
@@ -56,6 +63,9 @@ export default function EventsPage() {
         const { docs } = await eventsResponse.json()
 
         console.log('<====docs====>', docs)
+        if (docs.length === 0) {
+          router.push('/')
+        }
         setEvents(
           docs.map((event: Event) => ({
             ...event,
@@ -157,13 +167,13 @@ export default function EventsPage() {
       {events.length === 0 ? (
         <p className="text-center text-gray-500">No events found.</p>
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-4 w-full">
           {events.map((event, index) => (
             <li
               key={index}
-              className="p-4 bg-gray-100 rounded-md flex justify-between items-center shadow-[0px_0px_4px_rgba(0,0,0,0.25)]"
+              className="p-4 bg-gray-100 rounded-md flex justify-between items-center shadow-[0px_0px_4px_rgba(0,0,0,0.25)] w-full"
             >
-              <section className="grid grid-cols-[300px_1fr] gap-4">
+              <section className="grid grid-cols-[300px_1fr] gap-4 w-full">
                 <div className="flex flex-col gap-3 ">
                   {event.mediaUrls &&
                     event.mediaUrls.length > 0 &&
@@ -221,6 +231,17 @@ export default function EventsPage() {
                     />
                   </div>
                 </div>
+                {event.location?.coordinates && (
+                  <div className="mt-4 h-48 col-span-full">
+                    <EventMap
+                      events={[event]}
+                      initialPosition={[
+                        event.location.coordinates[1],
+                        event.location.coordinates[0],
+                      ]}
+                    />
+                  </div>
+                )}
               </section>
             </li>
           ))}
