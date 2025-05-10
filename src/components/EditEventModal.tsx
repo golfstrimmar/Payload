@@ -10,6 +10,12 @@ import { useStateContext } from '@/components/StateProvaider'
 import Loading from '@/components/Loading/Loading'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import dynamic from 'next/dynamic'
+
+const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
+  ssr: false,
+  loading: () => <div className="h-64 bg-gray-100 animate-pulse" />,
+})
 
 interface Event {
   id: string
@@ -19,6 +25,13 @@ interface Event {
   status: boolean
   user?: { email: string; id: string }
   mediaUrls?: { url: string }[]
+  location?: {
+    coordinates?: {
+      type: 'Point'
+      coordinates: [number, number] // [lng, lat]
+    }
+    address?: string
+  }
 }
 
 interface EditEventModalProps {
@@ -30,7 +43,10 @@ interface EditEventModalProps {
 const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setShowEditModal }) => {
   const router = useRouter()
   const { ID: currentUserId, token } = useStateContext()
-  const [editedEvent, setEditedEvent] = useState<Event>(event)
+  const [editedEvent, setEditedEvent] = useState<Event>({
+    ...event,
+    date: '',
+  })
   const [showModal, setShowModal] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -38,13 +54,16 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setSh
   const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>(
     event.mediaUrls?.map((media) => media.url) || [],
   )
+  const [location, setLocation] = useState<{
+    coordinates: [number, number]
+    address: string
+  } | null>(null)
   const { isLoading, setIsLoading } = useStateContext()
 
   // Преобразуем дату в формат, подходящий для datetime-local
   const formatDateForInput = (dateString: string) => {
     const date = new Date(dateString)
     if (isNaN(date.getTime())) return ''
-
     const pad = (num: number) => num.toString().padStart(2, '0')
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
   }
@@ -53,9 +72,21 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setSh
     if (event) {
       setEditedEvent({
         ...event,
-        date: formatDateForInput(event.date), // Форматируем дату при инициализации
+        date: formatDateForInput(event.date),
       })
       setExistingMediaUrls(event.mediaUrls?.map((media) => media.url) || [])
+      // Инициализируем location из event.location
+      setLocation(
+        event.location?.coordinates
+          ? {
+              coordinates: [
+                event.location.coordinates[0], // lng
+                event.location.coordinates[1], // lat
+              ],
+              address: event.location.address || '',
+            }
+          : null,
+      )
     }
   }, [event])
 
@@ -63,7 +94,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setSh
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
       setSelectedFiles(filesArray)
-
       const previews = filesArray.map((file) => URL.createObjectURL(file))
       setImagePreviews((prev) => [...prev, ...previews])
     }
@@ -136,6 +166,15 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setSh
           date: date.toISOString(),
           user: currentUserId,
           mediaUrls: allMediaUrls.map((url) => ({ url })),
+          location: location
+            ? {
+                coordinates: {
+                  type: 'Point',
+                  coordinates: location.coordinates,
+                },
+                address: location.address,
+              }
+            : undefined,
         }),
       })
 
@@ -300,11 +339,11 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setSh
             {imagePreviews.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">New Media</h3>
-                <div className="flex-nowrap gap-4 flex ">
+                <div className="flex-nowrap gap-4 flex">
                   {imagePreviews.map((preview, index) => (
                     <div
                       key={`new-${index}`}
-                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden    flex items-center justify-center"
+                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden flex items-center justify-center"
                     >
                       <img
                         src={preview}
@@ -323,6 +362,29 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setSh
                 </div>
               </div>
             )}
+
+            {/* Location */}
+            <div className="mb-4 h-64 w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Location
+              </label>
+              <EventMap
+                interactive
+                onLocationSelect={(coords) => {
+                  setLocation({
+                    coordinates: coords,
+                    address: '',
+                  })
+                }}
+                selectedLocation={location?.coordinates}
+                initialPosition={
+                  event.location?.coordinates ? event.location?.coordinates : undefined
+                }
+              />
+              {location && (
+                <div className="mt-2 text-sm">Selected: {location.coordinates.join(', ')}</div>
+              )}
+            </div>
 
             <Button buttonText="Update Event" buttonType="submit" />
           </form>
