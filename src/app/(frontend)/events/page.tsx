@@ -9,7 +9,6 @@ import toast, { Toaster } from 'react-hot-toast'
 import Loading from '@/components/Loading/Loading'
 import { AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-
 // =============================
 
 interface Event {
@@ -120,13 +119,13 @@ export default function EventsPage() {
         <ul className="space-y-4 w-full">
           {events.map((event, index) => (
             <div key={index}>
-              <Link href={`/events/${event.id}`}>{event.title}</Link>
-              {/* <EventCard
-                event={event}
-                handleDeleteEvent={handleDeleteEvent}
-                handleEditEvent={handleEditEvent}
-                user={user}
-              /> */}
+              <Link className="text-blue-500 hover:underline" href={`/events/${event.id}`}>
+                {event.title}
+              </Link>
+
+              <span className="ml-2">
+                {new Date(event.date).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })}
+              </span>
             </div>
           ))}
         </ul>

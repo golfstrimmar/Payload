@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import { AnimatePresence } from 'framer-motion'
 import EditEventModal from '@/components/EditEventModal'
 import { useStateContext } from '@/components/StateProvaider'
+import Link from 'next/link'
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 animate-pulse" />,
@@ -96,7 +97,7 @@ const EventCard: React.FC<EventCardProps> = () => {
   //  ====================
 
   return (
-    <li className="p-4 bg-gray-100 rounded-md flex justify-between items-center shadow-[0px_0px_4px_rgba(0,0,0,0.25)] w-full">
+    <li className="w-full p-4 bg-gray-100 rounded-md shadow-[0px_0px_4px_rgba(0,0,0,0.25)]">
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
       <AnimatePresence>
         {showEditModal && editingEvent && (
@@ -107,7 +108,15 @@ const EventCard: React.FC<EventCardProps> = () => {
           />
         )}
       </AnimatePresence>
-      <section className="grid grid-cols-[300px_1fr] gap-4 w-full">
+      <Link
+        href={`/events`}
+        className="inline-flex items-center gap-2 cursor-pointer mb-3 hover:bg-gray-200 p-2 rounded-md transition-all duration-300"
+      >
+        <Image src="/assets/svg/chevron-left.svg" alt="arrow" width={10} height={10} /> Return to
+        events{' '}
+      </Link>
+      <br />
+      <section className="grid grid-cols-[500px_1fr] gap-4 w-full">
         <div className="flex flex-col gap-3 ">
           {event.mediaUrls &&
             event.mediaUrls.length > 0 &&
@@ -131,14 +140,14 @@ const EventCard: React.FC<EventCardProps> = () => {
                 <img
                   src={url.url}
                   alt={index}
-                  className={`aspect-cover ${run === index ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' : ''}`}
+                  className={`aspect-cover min-h-[300px] ${run === index ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' : ''}`}
                 />
               </div>
             ))}
         </div>
         <div className="flex flex-col">
           <strong className="text-lg">Title: {event.title}</strong>
-          <p className="text-lg">Content: {event.content}</p>
+          <p className="text-lg ">Content: {event.content}</p>
           <p className="text-sm text-gray-600">Date:{new Date(event.date).toLocaleString()}</p>
           <p className="text-sm text-gray-600">User: {event.user?.email}</p>
           <p className="text-sm text-gray-600">Status: {event.status ? 'Active' : 'Inactive'}</p>
@@ -162,7 +171,7 @@ const EventCard: React.FC<EventCardProps> = () => {
           </div>
         </div>
         {event.location?.coordinates && (
-          <div className="mt-4 h-48 col-span-full">
+          <div className="mt-4 h-148 col-span-full">
             <EventMap
               events={[event]}
               initialPosition={[event.location.coordinates[1], event.location.coordinates[0]]}
