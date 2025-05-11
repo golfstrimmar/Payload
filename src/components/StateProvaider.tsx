@@ -1,6 +1,15 @@
 'use client'
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
+export interface Event {
+  id: string
+  title: string
+  description: string
+  date: string
+  time: string
+  location: string
+  mediaUrls: string[]
+}
 interface StateContextType {
   user: string
   setUser: React.Dispatch<React.SetStateAction<string>>
@@ -14,12 +23,15 @@ interface StateContextType {
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
   length: number
   setLength: React.Dispatch<React.SetStateAction<number>>
+  events: Event[]
+  setEvents: React.Dispatch<React.SetStateAction<Event[]>>
 }
 
 const StateContext = createContext<StateContextType | undefined>(undefined)
 
 export function StateProvider({ children }: { children: ReactNode }) {
   const [length, setLength] = useState<number>(0)
+  const [events, setEvents] = useState<Event[]>([])
   const [ID, setID] = useState<string>('')
   const [user, setUser] = useState<string>('')
   const [role, setRole] = useState<string>('')
@@ -30,6 +42,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
     return ''
   })
   const [isLoading, setIsLoading] = useState<boolean>(false)
+
   // Синхронизация token с localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -38,9 +51,6 @@ export function StateProvider({ children }: { children: ReactNode }) {
       } else {
         localStorage.removeItem('token')
       }
-    }
-    if (token) {
-      console.log('<==== token provider=======>', token)
     }
   }, [token])
 
@@ -86,6 +96,8 @@ export function StateProvider({ children }: { children: ReactNode }) {
         ID,
         isLoading,
         setIsLoading,
+        events,
+        setEvents,
       }}
     >
       {children}

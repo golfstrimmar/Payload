@@ -194,7 +194,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4"
       >
         {isLoading && <Loading />}
-        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
         <motion.div
           initial={{ scale: 0, y: 0 }}
           animate={{ scale: 1, y: 0 }}

@@ -1,4 +1,5 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -9,13 +10,45 @@ interface EventMapProps {
     id: string
     title?: string
     location?: {
-      coordinates: [number, number] // [lng, lat]
+      coordinates: [number, number]
     }
   }>
   onLocationSelect?: (coords: [number, number]) => void
   selectedLocation?: [number, number]
   initialPosition?: [number, number]
   interactive?: boolean
+}
+
+function MapUpdater({
+  events,
+  initialPosition,
+  selectedLocation,
+}: {
+  events?: EventMapProps['events']
+  initialPosition?: [number, number]
+  selectedLocation?: [number, number]
+}) {
+  const map = useMap()
+
+  useEffect(() => {
+    let center: [number, number] = [51.505, -0.09]
+    let zoom = 2
+
+    if (events?.length > 0 && events[0]?.location?.coordinates) {
+      center = [events[0].location.coordinates[1], events[0].location.coordinates[0]]
+      zoom = 15
+    } else if (initialPosition) {
+      center = [initialPosition[1], initialPosition[0]]
+      zoom = 15
+    } else if (selectedLocation) {
+      center = [selectedLocation[1], selectedLocation[0]]
+      zoom = 15
+    }
+
+    map.flyTo(center, zoom, { duration: 1 })
+  }, [map, events, initialPosition, selectedLocation])
+
+  return null
 }
 
 export default function EventMap({
@@ -40,25 +73,21 @@ export default function EventMap({
   }, [])
 
   if (!isClient) {
-    return <div className="h-64 bg-gray-100 animate-pulse" />
+    return <div className="h-64 bg-gray-100 animate-pulse rounded-md" />
   }
 
-  // Логи для отладки
-  console.log('EventMap props:', { events, initialPosition, selectedLocation })
-
-  // Определяем центр и зум
-  let center: [number, number] = [51.505, -0.09] // Дефолт
-  let zoom = 2 // Дефолтный зум для глобального вида
+  let center: [number, number] = [51.505, -0.09]
+  let zoom = 2
 
   if (events.length > 0 && events[0]?.location?.coordinates) {
-    center = [events[0].location.coordinates[1], events[0].location.coordinates[0]] // [lat, lng]
-    zoom = 15 // Крупный масштаб (уровень улиц)
+    center = [events[0].location.coordinates[1], events[0].location.coordinates[0]]
+    zoom = 15
   } else if (initialPosition) {
-    center = [initialPosition[1], initialPosition[0]] // [lat, lng]
-    zoom = 15 // Крупный масштаб
+    center = [initialPosition[1], initialPosition[0]]
+    zoom = 15
   } else if (selectedLocation) {
-    center = [selectedLocation[1], selectedLocation[0]] // [lat, lng]
-    zoom = 15 // Крупный масштаб
+    center = [selectedLocation[1], selectedLocation[0]]
+    zoom = 15
   }
 
   return (
@@ -71,6 +100,12 @@ export default function EventMap({
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      />
+
+      <MapUpdater
+        events={events}
+        initialPosition={initialPosition}
+        selectedLocation={selectedLocation}
       />
 
       {interactive && onLocationSelect && <LocationPicker onSelect={onLocationSelect} />}

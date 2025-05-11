@@ -36,13 +36,12 @@ interface Event {
 
 interface EditEventModalProps {
   event: Event
-  setEvents: React.Dispatch<React.SetStateAction<Event[]>>
   setShowEditModal: (show: boolean) => void
 }
 
-const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setShowEditModal }) => {
+const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal }) => {
   const router = useRouter()
-  const { ID: currentUserId, token } = useStateContext()
+  const { ID: currentUserId, token, events, setEvents } = useStateContext()
   const [editedEvent, setEditedEvent] = useState<Event>({
     ...event,
     date: '',
@@ -204,15 +203,11 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setSh
       )
       setShowEditModal(false)
       setIsLoading(false)
-      setTimeout(() => {
-        toast.dismiss()
-      }, 1500)
     } catch (err: any) {
       console.error('Error in handleUpdateEvent:', err.message)
       toast.error(err.message || 'Error fetching event')
     } finally {
       setTimeout(() => {
-        toast.dismiss()
         setIsLoading(false)
       }, 1500)
     }
@@ -227,7 +222,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setEvents, setSh
         className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4"
       >
         {isLoading && <Loading />}
-        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
         <motion.div
           initial={{ scale: 0, y: 0 }}
           animate={{ scale: 1, y: 0 }}
