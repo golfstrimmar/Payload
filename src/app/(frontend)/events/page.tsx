@@ -9,6 +9,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import Loading from '@/components/Loading/Loading'
 import { AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import Kalendar from '@/components/Kalendar/Kalendar'
 // =============================
 
 interface Event {
@@ -33,7 +34,6 @@ export default function EventsPage() {
   const { user, role, token, ID, isLoading, setIsLoading, length, setLength, events, setEvents } =
     useStateContext()
   const router = useRouter()
-  const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
 
   const handleAdminClick = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -95,41 +95,7 @@ export default function EventsPage() {
           </Link>
         )}
       </div>
-      <div className="my-4 text-center">
-        <Button
-          buttonText="Create Event Modal"
-          onClick={() => setShowCreateModal((prev) => !prev)}
-          buttonType="button"
-        />
-      </div>
-      <AnimatePresence>
-        {showCreateModal && (
-          <AddEventModal
-            setEvents={setEvents}
-            setShowCreateModal={setShowCreateModal}
-            currentUser={user}
-            events={events}
-          />
-        )}
-      </AnimatePresence>
-
-      {events.length === 0 ? (
-        <p className="text-center text-gray-500">No events found.</p>
-      ) : (
-        <ul className="space-y-4 w-full">
-          {events.map((event, index) => (
-            <div key={index}>
-              <Link className="text-blue-500 hover:underline" href={`/events/${event.id}`}>
-                {event.title}
-              </Link>
-
-              <span className="ml-2">
-                {new Date(event.date).toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })}
-              </span>
-            </div>
-          ))}
-        </ul>
-      )}
+      <Kalendar />
     </div>
   )
 }

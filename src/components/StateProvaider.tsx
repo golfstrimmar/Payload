@@ -68,7 +68,6 @@ export function StateProvider({ children }: { children: ReactNode }) {
         })
         if (response.ok) {
           const { user } = await response.json()
-          console.log('<==== User провайдер====>', user)
           setUser(user?.email || '')
           setRole(user?.role || '')
           setID(user?.id || '')

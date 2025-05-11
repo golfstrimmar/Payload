@@ -1,0 +1,177 @@
+@import "../../scss/common/colors";
+
+.kalendar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 100px 0 0 0;
+  transition: all .5s;
+
+  &._is-active {
+    position: relative;
+  }
+
+  &-month {
+    outline: 3px solid rgb(158, 158, 158);
+    display: inline-block;
+  }
+
+  &-plus {
+    display: inline-block;
+    margin: 0 0 0 auto;
+    border-radius: 100%;
+    transition: all .2s;
+
+    &:hover {
+      box-shadow: 0 0 5px 5px #04286f62;
+    }
+  }
+
+  &-unit {
+
+    &--container {
+      border-radius: 5px;
+      overflow: hidden;
+    }
+  }
+
+  &-line {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+
+    &--header {
+      .header-day {
+        background-color: #FFFFFF;
+        color: blue;
+        font-weight: 600;
+        outline: 2px solid rgb(158, 158, 158);
+        line-height: .8;
+        display: grid;
+        place-items: center;
+        padding: 5px 0;
+
+        &:nth-child(6) {
+          color: #FFFFFF;
+          background-color: rgb(4, 69, 199);
+          text-shadow: 0 0 3px rgb(251, 251, 252);
+        }
+
+        &:nth-child(7) {
+          color: #FFFFFF;
+          text-shadow: 0 0 3px rgb(251, 251, 252);
+          background-color: rgb(4, 40, 111);
+        }
+      }
+    }
+  }
+}
+
+.events-container {
+  margin: 5px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.day-now {
+  .event-date {
+    color: #FFFEC9 !important;
+  }
+}
+
+.day-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.day-number {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  border: #FFFEC9 solid 1px;
+  border-radius: 50%;
+  padding: 2px;
+  background: blue;
+  color: #FFFEC9;
+  min-width: 25px;
+  width: 20px;
+  height: 20px;
+  text-align: center;
+  transition: all .2s;
+
+  &:hover {
+    box-shadow: 0 0 3px 3px #a4898994;
+  }
+}
+
+.kalendar-month {
+  position: relative;
+  padding: 0;
+  margin: 30px 0 0 0;
+}
+
+.month-name {
+  display: inline-block;
+  color: rgb(228, 227, 227);
+
+  h3 {
+    background: blue;
+    display: inline-block;
+    line-height: 1;
+    padding: 3px 5px;
+  }
+}
+
+.-day {
+  min-height: 20px;
+  outline: 1px solid rgb(158, 158, 158);
+  color: blue;
+  font-weight: 300;
+  font-size: 12px;
+  padding: 0 3px;
+  background-color: #ffffff65;
+  gap: 3px;
+  overflow: hidden;
+  transition: all 0.5s ease-in-out;
+
+  &:hover {
+    overflow: visible;
+    transition: all 0.5s ease-in-out;
+  }
+}
+
+
+@media (min-width: 768px) and (max-width: 1199px) {}
+
+.day-name {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .days-grid .days {
+    grid-template-columns: 1fr !important;
+  }
+
+  .days-grid .day.empty {
+    display: none;
+  }
+
+  .head-day {
+    display: flex;
+    gap: 5px;
+  }
+
+  .day-name {
+    display: block;
+  }
+
+  .days-grid .weekdays {
+    display: none !important;
+  }
+
+  .kalendar-container {
+    margin: 153px auto 0;
+  }
+
+}
