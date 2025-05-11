@@ -162,7 +162,7 @@ export interface Event {
   date: string;
   content: string;
   title: string;
-  status?: boolean | null;
+  status: string;
   mediaUrls?:
     | {
         url?: string | null;

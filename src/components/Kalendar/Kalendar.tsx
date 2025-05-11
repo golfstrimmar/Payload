@@ -164,6 +164,7 @@ const Kalendar: React.FC = () => {
                       hour: 'numeric',
                       minute: 'numeric',
                     })}
+                    <span>{event.status}</span>
                   </Link>
                 </div>
               ))}

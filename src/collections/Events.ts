@@ -1,9 +1,9 @@
 import type { CollectionConfig } from 'payload'
 
 export const Events: CollectionConfig = {
-  slug: 'events', // Имя таблицы
+  slug: 'events',
   admin: {
-    useAsTitle: 'content', // Поле content ("Gaby Level 5") как заголовок
+    useAsTitle: 'content',
   },
   access: {
     read: ({ req: { user } }) => {
@@ -14,7 +14,7 @@ export const Events: CollectionConfig = {
         },
       }
     },
-    create: ({ req: { user } }) => !!user, // Только авторизованные
+    create: ({ req: { user } }) => !!user,
     update: ({ req: { user } }) => {
       if (!user) return false
       return {
@@ -34,9 +34,9 @@ export const Events: CollectionConfig = {
   },
   fields: [
     {
-      name: 'user', // Поле, связывающее событие с пользователем
+      name: 'user',
       type: 'relationship',
-      relationTo: 'users', // Связь с коллекцией users
+      relationTo: 'users',
       required: true,
       defaultValue: ({ user }) => user?.id,
       admin: {
@@ -65,14 +65,21 @@ export const Events: CollectionConfig = {
     },
     {
       name: 'status',
-      type: 'checkbox',
-      defaultValue: false,
+      type: 'text',
+      defaultValue: 'inactive',
+      required: true,
+      validate: (value) => {
+        if (value !== 'active' && value !== 'inactive') {
+          return 'Status must be either "active" or "inactive"'
+        }
+        return true
+      },
     },
     {
-      name: 'mediaUrls', // Обновлено на массив для хранения нескольких URL-ов
+      name: 'mediaUrls',
       type: 'array',
       required: false,
-      label: 'Event Media URLs', // Подсказка в админке
+      label: 'Event Media URLs',
       fields: [
         {
           name: 'url',
@@ -87,7 +94,7 @@ export const Events: CollectionConfig = {
       fields: [
         {
           name: 'coordinates',
-          type: 'point', // Специальный тип для геоданных в Payload
+          type: 'point',
           required: false,
           admin: {
             description: 'Click on the map to set location',

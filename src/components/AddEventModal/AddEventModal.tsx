@@ -21,7 +21,7 @@ interface Event {
   title: string
   content: string
   date: string
-  status: boolean
+  status: 'active' | 'inactive'
   mediaUrls?: { url: string }[]
   location?: { coordinates: [number, number]; address?: string }
   user?: { id: string; email?: string }
@@ -46,7 +46,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     title: '',
     content: '',
     time: '',
-    status: true,
+    status: 'inactive' as 'active' | 'inactive',
   })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -75,6 +75,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       }
       return prev
     })
+  }
+
+  const toggleStatus = () => {
+    setNewEvent((prev) => ({
+      ...prev,
+      status: prev.status === 'active' ? 'inactive' : 'active',
+    }))
   }
 
   const handleCreateEvent = async (e: React.FormEvent) => {
@@ -132,9 +139,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         body: JSON.stringify(eventData),
       })
 
-      console.log('Response status:', response.status)
-      console.log('Response headers:', response.headers.get('content-type'))
-
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || 'Failed to create event')
@@ -142,14 +146,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 
       const responseData = await response.json()
       const createdEvent = responseData.doc || responseData
-      console.log('<==== Created event ====>', createdEvent)
 
       const normalizedEvent: Event = {
         id: String(createdEvent.id || createdEvent._id || `temp-${Date.now()}`),
         title: createdEvent.title || eventData.title,
         content: createdEvent.content || eventData.content,
         date: createdEvent.date || eventData.date,
-        status: createdEvent.status ?? eventData.status,
+        status: createdEvent.status || eventData.status,
         mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
         location: createdEvent.location || eventData.location,
         user: {
@@ -159,11 +162,9 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       }
 
       setEvents((prev) => [...prev, normalizedEvent])
-      console.log('New event added:', normalizedEvent)
-
       toast.success('Event created successfully')
       setShowCreateModal(false)
-      setNewEvent({ title: '', content: '', time: '', status: true })
+      setNewEvent({ title: '', content: '', time: '', status: 'inactive' })
       setSelectedFiles([])
       setImagePreviews([])
       setLocation(null)
@@ -242,15 +243,25 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 required
               />
             </div>
-            <div className="mb-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={newEvent.status}
-                  onChange={(e) => setNewEvent({ ...newEvent, status: e.target.checked })}
-                  className="mr-2"
-                />
-                <span className="text-sm font-medium text-gray-700">Active</span>
+            <div className="mb-4 flex items-center">
+              <label className="flex items-center cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={newEvent.status === 'active'}
+                    onChange={toggleStatus}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`block w-14 h-8 rounded-full ${newEvent.status === 'active' ? 'bg-blue-500' : 'bg-gray-400'}`}
+                  ></div>
+                  <div
+                    className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${newEvent.status === 'active' ? 'transform translate-x-6' : ''}`}
+                  ></div>
+                </div>
+                <div className="ml-3 text-gray-700 font-medium">
+                  {newEvent.status === 'active' ? 'Active' : 'Inactive'}
+                </div>
               </label>
             </div>
             <div className="mb-4">

@@ -1,4 +1,5 @@
 'use client'
+
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
@@ -8,18 +9,22 @@ import { AnimatePresence } from 'framer-motion'
 import EditEventModal from '@/components/EditEventModal'
 import { useStateContext } from '@/components/StateProvaider'
 import Link from 'next/link'
+
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 animate-pulse" />,
 })
+
 interface Event {
   id: string
   title: string
-  description: string
+  content: string
   date: string
   time: string
   location: string
   mediaUrls: string[]
+  status: 'active' | 'inactive'
+  user?: { id: string; email?: string }
 }
 
 interface EventCardProps {
@@ -29,46 +34,41 @@ interface EventCardProps {
 }
 
 const EventCard: React.FC<EventCardProps> = () => {
-  const [run, setRun] = useState<number>(null)
+  const [run, setRun] = useState<number | null>(null)
   const { id } = useParams<{ id: string }>()
   const [event, setEvent] = useState<Event>({
     id: '',
     title: '',
-    description: '',
+    content: '',
     date: '',
     time: '',
     location: '',
     mediaUrls: [],
+    status: 'inactive',
   })
   const [showEditModal, setShowEditModal] = useState<boolean>(false)
-  const [editingEvent, setEditingEvent] = useState<Event>(null)
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const router = useRouter()
   const { user, role, token, ID, isLoading, setIsLoading, events, setEvents } = useStateContext()
-  //  ====================
-  useEffect(() => {
-    console.log('<====id====>', id)
-    console.log(
-      '<====events====>',
-      events.map((foo) => {
-        return foo.id
-      }),
-    )
 
+  useEffect(() => {
     if (id && events) {
       const foundEvent = events.find((e) => String(e.id) === String(id))
-      console.log('<==== foundEvent ====>', foundEvent)
       if (foundEvent) {
-        setEvent(foundEvent)
+        setEvent({
+          ...foundEvent,
+          status: foundEvent.status === 'active' ? 'active' : 'inactive',
+        })
       } else {
         toast.error('Event not found')
+        router.push('/events')
       }
     }
-  }, [id, events])
-  //  ====================
+  }, [id, events, router])
+
   const handleDeleteEvent = async (id: string) => {
     setIsLoading(true)
 
-    const token = localStorage.getItem('token')
     if (!token) {
       router.push('/login')
       return
@@ -82,19 +82,89 @@ const EventCard: React.FC<EventCardProps> = () => {
         },
       })
 
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete event')
+      }
+
       setEvents(events.filter((event) => event.id !== id))
       toast.success('Event deleted successfully')
       router.push('/events')
-    } catch (error) {
+    } catch (error: any) {
       setIsLoading(false)
-      toast.error('Error deleting event')
+      toast.error(error.message || 'Error deleting event')
     }
   }
+
   const handleEditEvent = (event: Event) => {
     setEditingEvent(event)
     setShowEditModal(true)
   }
-  //  ====================
+
+  const toggleStatus = async () => {
+    if (!token) {
+      toast.error('You must be logged in to update status')
+      router.push('/login')
+      return
+    }
+
+    if (!event.id) {
+      toast.error('Invalid event ID')
+      return
+    }
+
+    const newStatus = event.status === 'active' ? 'inactive' : 'active'
+    const prevEvent = { ...event }
+
+    setIsLoading(true)
+
+    try {
+      // Логируем данные перед отправкой
+      console.log('Updating event status:', {
+        eventId: event.id,
+        newStatus,
+        token: Boolean(token), // Проверяем наличие токена
+      })
+
+      const response = await fetch(`/api/events/${event.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `JWT ${token}`,
+        },
+        body: JSON.stringify({
+          status: newStatus, // Упрощаем структуру данных
+        }),
+      })
+
+      // Логируем ответ сервера
+      console.log('Server response:', {
+        status: response.status,
+        ok: response.ok,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Error response data:', errorData)
+        throw new Error(errorData.message || `Failed to update status: ${response.status}`)
+      }
+
+      // Обновляем состояние только после успешного ответа от сервера
+      setEvent({ ...event, status: newStatus })
+      setEvents(events.map((e) => (e.id === event.id ? { ...e, status: newStatus } : e)))
+
+      toast.success(`Event status updated to ${newStatus}`)
+    } catch (error: any) {
+      console.error('Full error updating status:', error)
+      toast.error(error.message || 'Error updating status')
+
+      // Восстанавливаем предыдущее состояние
+      setEvent(prevEvent)
+      setEvents(events.map((e) => (e.id === event.id ? prevEvent : e)))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <li className="w-full p-4 bg-gray-100 rounded-md shadow-[0px_0px_4px_rgba(0,0,0,0.25)]">
@@ -113,17 +183,21 @@ const EventCard: React.FC<EventCardProps> = () => {
         className="inline-flex items-center gap-2 cursor-pointer mb-3 hover:bg-gray-200 p-2 rounded-md transition-all duration-300"
       >
         <Image src="/assets/svg/chevron-left.svg" alt="arrow" width={10} height={10} /> Return to
-        events{' '}
+        events
       </Link>
       <br />
       <section className="grid grid-cols-[500px_1fr] gap-4 w-full">
-        <div className="flex flex-col gap-3 ">
+        <div className="flex flex-col gap-3">
           {event.mediaUrls &&
             event.mediaUrls.length > 0 &&
             event.mediaUrls.map((url, index) => (
               <div
                 key={index}
-                className={`w-full shadow-[0px_0px_8px_rgba(0,0,0,0.25)] cursor-pointer hover:shadow-[0px_0px_16px_rgba(0,0,0,0.25)] transition-all duration-300 ${run === index ? 'fixed w-[100vw] h-[100vh] z-500 top-0 left-0 bg-[rgba(0,0,0,0.9)] ]' : ''}`}
+                className={`w-full shadow-[0px_0px_8px_rgba(0,0,0,0.25)] cursor-pointer hover:shadow-[0px_0px_16px_rgba(0,0,0,0.25)] transition-all duration-300 ${
+                  run === index
+                    ? 'fixed w-[100vw] h-[100vh] z-500 top-0 left-0 bg-[rgba(0,0,0,0.9)]'
+                    : ''
+                }`}
                 onClick={() => {
                   setRun(index)
                 }}
@@ -133,24 +207,52 @@ const EventCard: React.FC<EventCardProps> = () => {
                     e.stopPropagation()
                     setRun(null)
                   }}
-                  className={`  ${run === index ? 'block fixed top-4 right-4  z-500 cursor-pointer' : 'hidden'}`}
+                  className={` ${
+                    run === index ? 'block fixed top-4 right-4 z-500 cursor-pointer' : 'hidden'
+                  }`}
                 >
                   <Image src="/assets/svg/cross.svg" width={20} height={20} alt="close" />
                 </button>
                 <img
                   src={url.url}
                   alt={index}
-                  className={`aspect-cover min-h-[300px] ${run === index ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2' : ''}`}
+                  className={`aspect-cover min-h-[300px] ${
+                    run === index
+                      ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+                      : ''
+                  }`}
                 />
               </div>
             ))}
         </div>
-        <div className="flex flex-col">
-          <strong className="text-lg">Title: {event.title}</strong>
-          <p className="text-lg ">Content: {event.content}</p>
-          <p className="text-sm text-gray-600">Date:{new Date(event.date).toLocaleString()}</p>
+        <div className="flex flex-col gap-3">
+          <strong className="text-[30px]">{event.title}</strong>
+          <p className="text-[20px] my-2 text-gray-800 border border-gray-400 p-3">
+            {event.content}
+          </p>
+          <h3 className="text-[25px]">
+            {new Date(event.date).toLocaleTimeString('de-DE', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })}
+          </h3>
           <p className="text-sm text-gray-600">User: {event.user?.email}</p>
-          <p className="text-sm text-gray-600">Status: {event.status ? 'Active' : 'Inactive'}</p>
+          <div className="flex items-center gap-4">
+            <label className="text-sm text-gray-600">Status:</label>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={event.status === 'active'}
+                onChange={toggleStatus}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+              <span className="ml-2 text-sm font-medium text-gray-700">
+                {event.status === 'active' ? 'Active' : 'Inactive'}
+              </span>
+            </label>
+          </div>
           <div className="mt-auto flex gap-2">
             <Image
               onClick={() => handleEditEvent(event)}
