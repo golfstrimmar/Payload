@@ -46,6 +46,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     title: '',
     content: '',
     time: '',
+    endDateTime: '', // ISO-формат (YYYY-MM-DDTHH:mm)
     status: 'inactive' as 'active' | 'inactive',
   })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -84,6 +85,17 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     }))
   }
 
+  const parseDateTime = (dateTimeString: string): Date => {
+    try {
+      const date = new Date(dateTimeString)
+      if (isNaN(date.getTime())) throw new Error('Invalid date format')
+      return date
+    } catch (e) {
+      console.error('Error parsing date:', dateTimeString, e)
+      return new Date(NaN)
+    }
+  }
+
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -96,12 +108,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     }
 
     try {
-      const selectedDate = new Date(selectedDay)
-      const [hours, minutes] = newEvent.time.split(':').map(Number)
-      selectedDate.setHours(hours || 0, minutes || 0)
-
-      if (isNaN(selectedDate.getTime())) throw new Error('Invalid date format')
-
+      // Загрузка медиа
       const mediaUrls: string[] = []
       for (const file of selectedFiles) {
         const formData = new FormData()
@@ -118,10 +125,16 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         mediaUrls.push(data.url)
       }
 
-      const eventData = {
+      // Базовые данные события
+      const selectedDate = new Date(selectedDay)
+      const [hours, minutes] = newEvent.time.split(':').map(Number)
+      selectedDate.setHours(hours || 0, minutes || 0)
+
+      if (isNaN(selectedDate.getTime())) throw new Error('Invalid start date format')
+
+      const eventBase = {
         title: newEvent.title,
         content: newEvent.content,
-        date: selectedDate.toISOString(),
         status: newEvent.status,
         user: currentUser?.id,
         mediaUrls: mediaUrls.map((url) => ({ url })),
@@ -130,41 +143,113 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           : undefined,
       }
 
-      const response = await fetch('/api/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `JWT ${token}`,
-        },
-        body: JSON.stringify(eventData),
-      })
+      // Множественное добавление
+      const createdEvents: Event[] = []
+      if (newEvent.endDateTime) {
+        // Парсинг endDateTime
+        const endDate = parseDateTime(newEvent.endDateTime)
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Failed to create event')
+        if (isNaN(endDate.getTime())) throw new Error('Invalid end date format')
+        if (endDate < selectedDate) throw new Error('End date must be after start date')
+
+        // // Ограничение интервала (3 месяца)
+        // const maxInterval = new Date(selectedDate)
+        // maxInterval.setMonth(maxInterval.getMonth() + 3)
+        // if (endDate > maxInterval) throw new Error('Interval exceeds 3 months')
+
+        // День недели selectedDate (0=воскресенье, 1=понедельник, ..., 6=суббота)
+        const dayOfWeek = selectedDate.getDay()
+        const currentDate = new Date(selectedDate)
+
+        // Генерация событий для каждого соответствующего дня недели
+        while (currentDate <= endDate) {
+          if (currentDate.getDay() === dayOfWeek) {
+            const eventData = {
+              ...eventBase,
+              date: currentDate.toISOString(),
+            }
+
+            const response = await fetch('/api/events', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `JWT ${token}`,
+              },
+              body: JSON.stringify(eventData),
+            })
+
+            if (!response.ok) {
+              const errorData = await response.json()
+              throw new Error(errorData.message || 'Failed to create event')
+            }
+
+            const responseData = await response.json()
+            const createdEvent = responseData.doc || responseData
+
+            const normalizedEvent: Event = {
+              id: String(createdEvent.id || createdEvent._id || `temp-${Date.now()}`),
+              title: createdEvent.title || eventData.title,
+              content: createdEvent.content || eventData.content,
+              date: createdEvent.date || eventData.date,
+              status: createdEvent.status || eventData.status,
+              mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
+              location: createdEvent.location || eventData.location,
+              user: {
+                id: String(createdEvent.user?.id || currentUser?.id),
+                email: createdEvent.user?.email || currentUser?.email,
+              },
+            }
+
+            createdEvents.push(normalizedEvent)
+          }
+          currentDate.setDate(currentDate.getDate() + 1)
+        }
+      } else {
+        // Одиночное событие
+        const eventData = {
+          ...eventBase,
+          date: selectedDate.toISOString(),
+        }
+
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `JWT ${token}`,
+          },
+          body: JSON.stringify(eventData),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to create event')
+        }
+
+        const responseData = await response.json()
+        const createdEvent = responseData.doc || responseData
+
+        const normalizedEvent: Event = {
+          id: String(createdEvent.id || createdEvent._id || `temp-${Date.now()}`),
+          title: createdEvent.title || eventData.title,
+          content: createdEvent.content || eventData.content,
+          date: createdEvent.date || eventData.date,
+          status: createdEvent.status || eventData.status,
+          mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
+          location: createdEvent.location || eventData.location,
+          user: {
+            id: String(createdEvent.user?.id || currentUser?.id),
+            email: createdEvent.user?.email || currentUser?.email,
+          },
+        }
+
+        createdEvents.push(normalizedEvent)
       }
 
-      const responseData = await response.json()
-      const createdEvent = responseData.doc || responseData
-
-      const normalizedEvent: Event = {
-        id: String(createdEvent.id || createdEvent._id || `temp-${Date.now()}`),
-        title: createdEvent.title || eventData.title,
-        content: createdEvent.content || eventData.content,
-        date: createdEvent.date || eventData.date,
-        status: createdEvent.status || eventData.status,
-        mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
-        location: createdEvent.location || eventData.location,
-        user: {
-          id: String(createdEvent.user?.id || currentUser?.id),
-          email: createdEvent.user?.email || currentUser?.email,
-        },
-      }
-
-      setEvents((prev) => [...prev, normalizedEvent])
-      toast.success('Event created successfully')
+      // Обновление состояния событий
+      setEvents((prev) => [...prev, ...createdEvents])
+      toast.success(`Event${createdEvents.length > 1 ? 's' : ''} created successfully`)
       setShowCreateModal(false)
-      setNewEvent({ title: '', content: '', time: '', status: 'inactive' })
+      setNewEvent({ title: '', content: '', time: '', endDateTime: '', status: 'inactive' })
       setSelectedFiles([])
       setImagePreviews([])
       setLocation(null)
@@ -212,12 +297,23 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               </p>
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Time</label>
+              <label className="block text-sm font-medium text-gray-700">Start Time</label>
               <input
                 type="time"
                 value={newEvent.time}
                 onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
                 required
+                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                End Date and Time (Optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={newEvent.endDateTime}
+                onChange={(e) => setNewEvent({ ...newEvent, endDateTime: e.target.value })}
                 className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
