@@ -8,7 +8,7 @@
 
 .months-grid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
   margin-bottom: 24px;
   width: 100%;
@@ -19,8 +19,8 @@
     border-radius: 8px;
     background: #f5f5f5;
     color: #333;
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 18px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
 

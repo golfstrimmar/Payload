@@ -8,6 +8,8 @@ import AddEventModal from '@/components/AddEventModal/AddEventModal'
 import './Kalendar.scss'
 import './KalendarDeep.scss'
 import Link from 'next/link'
+import DeleteEventsModal from '@/components/DeleteEventsModal/DeleteEventsModal'
+import LocationManager from '../LocationManager/LocationManager'
 const GERMAN_MONTHS = [
   'Januar',
   'Februar',
@@ -35,12 +37,13 @@ interface Event {
 }
 
 const Kalendar: React.FC = () => {
+  const [showLocationModal, setShowLocationModal] = useState<boolean>(false)
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
   const router = useRouter()
-  const { events, setEvents, user } = useStateContext()
+  const { events, setEvents, user, token, ID } = useStateContext()
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedDay, setselectedDay] = useState<string>('')
-
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   const eventsMap = useMemo(() => {
     const map = new Map()
 
@@ -74,6 +77,26 @@ const Kalendar: React.FC = () => {
 
     return map
   }, [events])
+  // -----------------------------------
+  // -----------------------------------
+  // -----------------------------------
+  const [locations, setlocations] = useState<string[]>([])
+  useEffect(() => {
+    const fetchLocations = () => {
+      fetch('/api/locations')
+        .then((response) => response.json())
+        .then((data) => {
+          console.log('Fetched locations:', data.docs)
+          setlocations(data.docs)
+        })
+        .catch((error) => {
+          console.error('Error fetching locations:', error)
+        })
+    }
+
+    fetchLocations()
+  }, [])
+
   // -----------------------------------
   // -----------------------------------
   // -----------------------------------
@@ -241,6 +264,45 @@ const Kalendar: React.FC = () => {
           />
         )}
       </AnimatePresence>
+      {showLocationModal && (
+        <LocationManager onClose={() => setShowLocationModal(false)} userId={ID} token={token} />
+      )}
+      <button
+        className="p-2 bg-blue-500 text-white rounded-md mb-4 cursor-pointer"
+        onClick={() => setShowLocationModal(true)}
+      >
+        Show LocationModal
+      </button>
+      {locations && (
+        <div>
+          {locations.map((location) => (
+            <div key={location.id}>
+              <h2>{location.name}</h2>
+              <p>Latitude: {location.coordinates[0].latitude}</p>
+              <p>Longitude: {location.coordinates[0].longitude}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      <div>
+        <div className="flex justify-between mb-4">
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out cursor-pointer"
+          >
+            Delete Events
+          </button>
+        </div>
+        <AnimatePresence>
+          {showDeleteModal && (
+            <DeleteEventsModal
+              events={events}
+              setEvents={setEvents}
+              setShowDeleteModal={setShowDeleteModal}
+            />
+          )}
+        </AnimatePresence>
+      </div>
       <div className="months-grid">
         {GERMAN_MONTHS.map((month, index) => (
           <button
@@ -254,7 +316,7 @@ const Kalendar: React.FC = () => {
       </div>
       {selectedMonth !== null && (
         <div className="days-grid">
-          <h3>{GERMAN_MONTHS[selectedMonth]}</h3>
+          <h3 className="text-[25px] mb-4 font-bold">{GERMAN_MONTHS[selectedMonth]}</h3>
           <div className="weekdays">
             {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day) => (
               <div key={day} className="weekday">
