@@ -180,3 +180,24 @@
     border-radius: 50%;
   }
 }
+
+.pulse {
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    filter: brightness(100%);
+  }
+
+  50% {
+    transform: scale(1.05);
+    filter: brightness(110%);
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(100%);
+  }
+}
