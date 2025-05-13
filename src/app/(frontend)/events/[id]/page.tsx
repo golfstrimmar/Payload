@@ -21,7 +21,7 @@ interface Event {
   content: string
   date: string
   time: string
-  location: string
+  location: { coordinates: [number, number]; address?: string }
   mediaUrls: string[]
   status: 'active' | 'inactive'
   user?: { id: string; email?: string }
@@ -32,7 +32,7 @@ interface EventCardProps {
   handleEditEvent: (event: Event) => void
   handleDeleteEvent: (id: string) => void
 }
-
+// xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 const EventCard: React.FC<EventCardProps> = () => {
   const [run, setRun] = useState<number | null>(null)
   const { id } = useParams<{ id: string }>()
@@ -42,29 +42,41 @@ const EventCard: React.FC<EventCardProps> = () => {
     content: '',
     date: '',
     time: '',
-    location: '',
+    location: { coordinates: [0, 0], address: '' },
     mediaUrls: [],
     status: 'inactive',
   })
   const [showEditModal, setShowEditModal] = useState<boolean>(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const router = useRouter()
-  const { user, role, token, ID, isLoading, setIsLoading, events, setEvents } = useStateContext()
-
+  const { token, setIsLoading, events, setEvents } = useStateContext()
+  useEffect(() => {
+    if (events) {
+      console.log('<==== events on eventpage====>', events)
+    }
+  }, [events])
   useEffect(() => {
     if (id && events) {
-      const foundEvent = events.find((e) => String(e.id) === String(id))
+      const foundEvent = events?.find((e) => String(e.id) === String(id))
       if (foundEvent) {
         setEvent({
           ...foundEvent,
           status: foundEvent.status === 'active' ? 'active' : 'inactive',
         })
-      } else {
-        toast.error('Event not found')
-        router.push('/events')
       }
     }
-  }, [id, events, router])
+  }, [events])
+
+  useEffect(() => {
+    if (id) {
+      console.log('<==== id====>', id)
+    }
+  }, [id])
+  useEffect(() => {
+    if (event) {
+      console.log('<==== event on eventpage====>', event)
+    }
+  }, [event])
 
   const handleDeleteEvent = async (id: string) => {
     setIsLoading(true)
@@ -89,18 +101,13 @@ const EventCard: React.FC<EventCardProps> = () => {
 
       setEvents(events.filter((event) => event.id !== id))
       toast.success('Event deleted successfully')
+      setIsLoading(false)
       router.push('/events')
     } catch (error: any) {
       setIsLoading(false)
       toast.error(error.message || 'Error deleting event')
     }
   }
-
-  const handleEditEvent = (event: Event) => {
-    setEditingEvent(event)
-    setShowEditModal(true)
-  }
-
   const toggleStatus = async () => {
     if (!token) {
       toast.error('You must be logged in to update status')
@@ -166,6 +173,11 @@ const EventCard: React.FC<EventCardProps> = () => {
     }
   }
 
+  // ----------------------------------
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event)
+    setShowEditModal(true)
+  }
   return (
     <li className="w-full p-4 bg-gray-100 rounded-md shadow-[0px_0px_4px_rgba(0,0,0,0.25)]">
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
@@ -174,7 +186,7 @@ const EventCard: React.FC<EventCardProps> = () => {
           <EditEventModal
             setEvents={setEvents}
             setShowEditModal={setShowEditModal}
-            event={editingEvent}
+            event={editingEvent.id}
           />
         )}
       </AnimatePresence>
@@ -214,8 +226,8 @@ const EventCard: React.FC<EventCardProps> = () => {
                   <Image src="/assets/svg/cross.svg" width={20} height={20} alt="close" />
                 </button>
                 <img
-                  src={url.url}
-                  alt={index}
+                  src={url}
+                  alt={url}
                   className={`aspect-cover min-h-[300px] ${
                     run === index
                       ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
@@ -230,12 +242,9 @@ const EventCard: React.FC<EventCardProps> = () => {
           <p className="text-[20px] my-2 text-gray-800 border border-gray-400 p-3">
             {event.content}
           </p>
+          <h3 className="text-[25px]">{event.date}</h3>
           <h3 className="text-[25px]">
-            {new Date(event.date).toLocaleTimeString('de-DE', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false,
-            })}
+            {event.time.split(':')[0] + ':' + event.time.split(':')[1]}
           </h3>
           <p className="text-sm text-gray-600">User: {event.user?.email}</p>
           <div className="flex items-center gap-4">
@@ -272,12 +281,10 @@ const EventCard: React.FC<EventCardProps> = () => {
             />
           </div>
         </div>
-        {event.location?.coordinates && (
+        {event.location && (
           <div className="mt-4 h-148 col-span-full">
-            <EventMap
-              events={[event]}
-              initialPosition={[event.location.coordinates[1], event.location.coordinates[0]]}
-            />
+            <h3 className="text-[25px]">Location name: {event.location.address}</h3>
+            <EventMap initialPosition={event.location.coordinates} />
           </div>
         )}
       </section>

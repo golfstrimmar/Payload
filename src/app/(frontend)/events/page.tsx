@@ -10,6 +10,7 @@ import Loading from '@/components/Loading/Loading'
 import { AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import Kalendar from '@/components/Kalendar/Kalendar'
+
 // =============================
 
 interface Event {
@@ -30,51 +31,15 @@ interface Event {
 }
 
 export default function EventsPage() {
-  const [error, setError] = useState('')
-  const { user, role, token, ID, isLoading, setIsLoading, length, setLength, events, setEvents } =
-    useStateContext()
+  const { user, role, isLoading, setIsLoading } = useStateContext()
   const router = useRouter()
 
   const handleAdminClick = (e: React.MouseEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     router.push('/admin').then(() => {
       setIsLoading(false)
     })
   }
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const eventsResponse = await fetch('/api/events', {
-          headers: { Authorization: `JWT ${token}` },
-        })
-        if (!eventsResponse.ok) throw new Error('Failed to fetch events')
-        const { docs } = await eventsResponse.json()
-
-        console.log('<====docs====>', docs)
-
-        setEvents(
-          docs.map((event: Event) => ({
-            ...event,
-            date: new Date(event.date).toLocaleString('en-US', { timeZone: 'Europe/Berlin' }),
-            user: event.user,
-          })),
-        )
-        setIsLoading(false)
-      } catch (err) {
-        toast.error('Failed to fetch events')
-        setIsLoading(false)
-        console.log('<==== Error fetching data =====>')
-      }
-    }
-
-    fetchEvents()
-  }, [])
-  useEffect(() => {
-    setIsLoading(true)
-  }, [])
-
-  if (error) return <p className="text-red-500 text-center mt-10">{error}</p>
 
   return (
     <div className=" mx-4 mt-10 p-6 bg-white rounded-lg shadow-md">

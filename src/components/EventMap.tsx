@@ -61,6 +61,12 @@ export default function EventMap({
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
+    if (initialPosition) {
+      console.log('<==== initialPosition====>', initialPosition)
+    }
+  }, [initialPosition])
+
+  useEffect(() => {
     setIsClient(true)
     if (typeof window !== 'undefined') {
       delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -116,6 +122,11 @@ export default function EventMap({
         </Marker>
       )}
 
+      {!selectedLocation && initialPosition && (
+        <Marker position={[initialPosition[1], initialPosition[0]]}>
+          <Popup>Event Location</Popup>
+        </Marker>
+      )}
       {events.map(
         (event) =>
           event.location?.coordinates && (

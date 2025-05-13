@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useStateContext } from '@/components/StateProvaider'
 import { AnimatePresence } from 'framer-motion'
 import AddEventModal from '@/components/AddEventModal/AddEventModal'
@@ -9,7 +8,7 @@ import './Kalendar.scss'
 import './KalendarDeep.scss'
 import Link from 'next/link'
 import DeleteEventsModal from '@/components/DeleteEventsModal/DeleteEventsModal'
-import LocationManager from '../LocationManager/LocationManager'
+
 const GERMAN_MONTHS = [
   'Januar',
   'Februar',
@@ -37,13 +36,21 @@ interface Event {
 }
 
 const Kalendar: React.FC = () => {
-  const [showLocationModal, setShowLocationModal] = useState<boolean>(false)
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
-  const router = useRouter()
-  const { events, setEvents, user, token, ID } = useStateContext()
+  const { events, setEvents, user, setFlagEvents } = useStateContext()
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedDay, setselectedDay] = useState<string>('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+
+  // -------------------------
+
+  useEffect(() => {
+    if (events) {
+      console.log('<==== events kalendar====>', events)
+    }
+  }, [events])
+  // -------------------------
+  // -------------------------
   const eventsMap = useMemo(() => {
     const map = new Map()
 
@@ -80,25 +87,6 @@ const Kalendar: React.FC = () => {
   // -----------------------------------
   // -----------------------------------
   // -----------------------------------
-  const [locations, setlocations] = useState<string[]>([])
-  useEffect(() => {
-    const fetchLocations = () => {
-      fetch('/api/locations')
-        .then((response) => response.json())
-        .then((data) => {
-          console.log('Fetched locations:', data.docs)
-          setlocations(data.docs)
-        })
-        .catch((error) => {
-          console.error('Error fetching locations:', error)
-        })
-    }
-
-    fetchLocations()
-  }, [])
-
-  // -----------------------------------
-  // -----------------------------------
   // -----------------------------------
   const parseEventDate = useCallback((dateString: string): Date => {
     try {
@@ -118,18 +106,31 @@ const Kalendar: React.FC = () => {
       const utcDate = new Date(Date.UTC(2025, selectedMonth, day))
       const dateKey = utcDate.toISOString().slice(0, 10)
 
-      const now = new Date()
+      // Текущее время в Europe/Berlin
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Berlin' }))
 
       const filteredEvents = (eventsMap.get(dateKey) || []).map((event) => {
-        const eventDate = parseEventDate(event.date)
+        const eventDate = parseEventDate(event.date, event.time)
         if (isNaN(eventDate.getTime())) {
           console.warn('Skipping event with invalid date:', event)
           return event
         }
 
+        console.log('<====eventDate====>', eventDate)
+        console.log(
+          '<====now====>',
+          now.toLocaleString('de-DE', {
+            timeZone: 'Europe/Berlin',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          }),
+        )
+
         const timeDiff = eventDate.getTime() - now.getTime()
         const isPast = timeDiff < 0
-        const isUpcoming = timeDiff > 0 && timeDiff <= 30 * 60 * 1000 // В пределах 30 минут
+        const isUpcoming = timeDiff > 0 && timeDiff <= 30 * 60 * 1000 // 30 минут
 
         return {
           ...event,
@@ -142,9 +143,10 @@ const Kalendar: React.FC = () => {
     },
     [selectedMonth, eventsMap, parseEventDate],
   )
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setEvents([...events])
+      setFlagEvents((prev) => !prev)
     }, 60000)
 
     return () => clearInterval(interval)
@@ -166,7 +168,6 @@ const Kalendar: React.FC = () => {
   }, [])
 
   const handleAdd = (date: Date) => {
-    // router.push(`/events/new?date=${date.toISOString()}`)
     setShowCreateModal(true)
     setselectedDay(date.toISOString())
   }
@@ -175,6 +176,7 @@ const Kalendar: React.FC = () => {
     const date = new Date(2025, selectedMonth, day)
     return date.toLocaleString('de-DE', { weekday: 'long' })
   }
+  // --------------renderDays----------------
 
   const renderDays = useMemo(() => {
     if (selectedMonth === null) return null
@@ -182,6 +184,7 @@ const Kalendar: React.FC = () => {
 
     return days.map((day, index) => {
       const dayEvents = getEventsForDate(day)
+
       return (
         <div
           key={`${selectedMonth}-${index}`}
@@ -216,7 +219,6 @@ const Kalendar: React.FC = () => {
             </div>
             <div className="day-name">{day ? findDayName(day) : ''}</div>
           </div>
-          {/* ===================================== */}
 
           {dayEvents.length > 0 && (
             <div className="events-container">
@@ -231,15 +233,10 @@ const Kalendar: React.FC = () => {
                         : 'bg-slate-400'
                   }`}
                 >
-                  <Link href={`/events/${event.id}`} className="inline-block w-full px-2 py-1">
+                  <Link href={`/events/${event.id}`} className="inline-block w-full px-1 py-1">
                     <strong> {event.title}</strong>
-                    <br />
-                    {new Date(event.date).toLocaleString('de-DE', {
-                      timeZone: 'Europe/Berlin',
-                      hour: 'numeric',
-                      minute: 'numeric',
-                    })}
-                    {/* <span>{event.status === 'aktiv' ? 'a' : 'i'}</span> */}
+                    <br className="mb-1" />
+                    {event.time.split(':')[0] + ':' + event.time.split(':')[1]}
                   </Link>
                 </div>
               ))}
@@ -264,26 +261,7 @@ const Kalendar: React.FC = () => {
           />
         )}
       </AnimatePresence>
-      {showLocationModal && (
-        <LocationManager onClose={() => setShowLocationModal(false)} userId={ID} token={token} />
-      )}
-      <button
-        className="p-2 bg-blue-500 text-white rounded-md mb-4 cursor-pointer"
-        onClick={() => setShowLocationModal(true)}
-      >
-        Show LocationModal
-      </button>
-      {locations && (
-        <div>
-          {locations.map((location) => (
-            <div key={location.id}>
-              <h2>{location.name}</h2>
-              <p>Latitude: {location.coordinates[0].latitude}</p>
-              <p>Longitude: {location.coordinates[0].longitude}</p>
-            </div>
-          ))}
-        </div>
-      )}
+
       <div>
         <div className="flex justify-between mb-4">
           <button

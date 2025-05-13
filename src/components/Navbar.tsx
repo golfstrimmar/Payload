@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 import { useStateContext } from '@/components/StateProvaider'
 import { useRouter, useParams, usePathname } from 'next/navigation'
+import Uhr from '@/components/Uhr/Uhr'
 
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -38,11 +39,12 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-blue-600 p-4">
+    <nav className="bg-blue-600 p-6">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="text-white text-lg font-bold">
           <Link href="/">My App</Link>
         </div>
+        <Uhr />
         <div className="flex space-x-4">
           <Link
             href="/"

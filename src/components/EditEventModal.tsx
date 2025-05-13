@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import styles from './EditEventModal.module.scss'
 import Input from '@/components/ui/Input/Input'
 import { useRouter } from 'next/navigation'
@@ -11,7 +11,8 @@ import Loading from '@/components/Loading/Loading'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
-
+import { time } from 'console'
+import LocationManager from '@/components/LocationManager/LocationManager'
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 animate-pulse" />,
@@ -21,8 +22,9 @@ interface Event {
   id: string
   title: string
   date: string
+  time: string
   content: string
-  status: boolean
+  status: 'active' | 'inactive'
   user?: { email: string; id: string }
   mediaUrls?: { url: string }[]
   location?: {
@@ -38,14 +40,22 @@ interface EditEventModalProps {
   event: Event
   setShowEditModal: (show: boolean) => void
 }
-
+// xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal }) => {
   const router = useRouter()
-  const { ID: currentUserId, token, events, setEvents } = useStateContext()
-  const [editedEvent, setEditedEvent] = useState<Event>({
-    ...event,
-    date: '',
-  })
+
+  const {
+    ID: currentUserId,
+    token,
+    setFlagEvents,
+    events,
+    locations,
+    setFlagLocations,
+  } = useStateContext()
+  const [editedEvent, setEditedEvent] = useState<Event>(
+    events.find((e) => String(e.id) === String(event)) || {},
+  )
+  const [showLocationManager, setShowLocationManager] = useState(false)
   const [showModal, setShowModal] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -57,38 +67,97 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
     coordinates: [number, number]
     address: string
   } | null>(null)
-  const { isLoading, setIsLoading } = useStateContext()
-
-  // Преобразуем дату в формат, подходящий для datetime-local
-  const formatDateForInput = (dateString: string) => {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return ''
-    const pad = (num: number) => num.toString().padStart(2, '0')
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-  }
+  const { isLoading, setIsLoading, ID } = useStateContext()
 
   useEffect(() => {
     if (event) {
-      setEditedEvent({
-        ...event,
-        date: formatDateForInput(event.date),
-      })
+      console.log('<==== editedEvent====>', editedEvent)
+    }
+  }, [editedEvent])
+
+  useEffect(() => {
+    if (event) {
       setExistingMediaUrls(event.mediaUrls?.map((media) => media.url) || [])
-      // Инициализируем location из event.location
-      setLocation(
-        event.location?.coordinates
-          ? {
-              coordinates: [
-                event.location.coordinates[0], // lng
-                event.location.coordinates[1], // lat
-              ],
-              address: event.location.address || '',
-            }
-          : null,
-      )
     }
   }, [event])
+  const toggleStatus = useCallback(() => {
+    setEditedEvent((prev) => ({
+      ...prev,
+      status: prev.status === 'active' ? 'inactive' : 'active',
+    }))
+  }, [])
+  // ----------------renderLocations------------------
+  const handleSelectLocation = useCallback(
+    (selectedLocation: {
+      name: string
+      coordinates: { latitude: number; longitude: number }[]
+    }) => {
+      setLocation({
+        coordinates: selectedLocation.coordinates[0]
+          ? [selectedLocation.coordinates[0].latitude, selectedLocation.coordinates[0].longitude]
+          : [0, 0],
+        address: selectedLocation.name || '',
+      })
+    },
+    [],
+  )
+  const handleDeleteLocation = async (id: string) => {
+    try {
+      const response = await fetch(`/api/locations/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      })
 
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete location')
+      }
+
+      toast.success('Location deleted successfully')
+      setFlagLocations((prev) => !prev)
+    } catch (err: any) {
+      console.error('Error deleting location:', err)
+      toast.error(err.message || 'Failed to delete location')
+    }
+  }
+  const renderLocations = useMemo(
+    () =>
+      locations.length > 0 ? (
+        <div className="mb-2 rounded-md border border-gray-300 p-2">
+          <h3 className="text-lg font-bold text-gray-700 mb-1">Saved Locations:</h3>
+          <div className="mb-2  rounded-md ">
+            {locations.map((loc) => (
+              <p
+                key={loc.id}
+                onClick={() => handleSelectLocation(loc)}
+                className={`cursor-pointer p-1 rounded-md border border-gray-200 transition-all duration-200 bg-slate-100 hover:bg-slate-300 text-gray-600 my-1 flex items-center justify-between ${
+                  location?.address === loc.name
+                    ? 'bg-slate-600 text-white hover:bg-slate-600 hover:text-white'
+                    : ''
+                }`}
+              >
+                {loc.name}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDeleteLocation(loc.id)
+                  }}
+                  className="cursor-pointer hover:transform hover:scale-105 transition-transform duration-200"
+                >
+                  <Image src="/assets/svg/cross.svg" width={15} height={15} alt="delete" />
+                </button>
+              </p>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="text-gray-500 mb-2">No locations saved yet.</p>
+      ),
+    [locations, location, handleSelectLocation],
+  )
+  // --------------
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
@@ -153,8 +222,11 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
 
       // Объединяем существующие (не удаленные) и новые URL
       const allMediaUrls = [...existingMediaUrls, ...newMediaUrls]
-
-      const response = await fetch(`/api/events/${event.id}`, {
+      // Обновляем date
+      const newEventDate = new Date(editedEvent.date)
+      const [hours, minutes] = editedEvent.time.split(':').map(Number)
+      newEventDate.setHours(hours || 0, minutes || 0)
+      const response = await fetch(`/api/events/${event}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -162,7 +234,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
         },
         body: JSON.stringify({
           ...editedEvent,
-          date: date.toISOString(),
+          date: newEventDate,
           user: currentUserId,
           mediaUrls: allMediaUrls.map((url) => ({ url })),
           location: location
@@ -184,23 +256,9 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
       }
 
       const updatedEvent = await response.json()
-      console.log('<====Event Updated====>', updatedEvent)
-
+      console.log('<====Event Updated====>', updatedEvent.doc)
       toast.success('Event Updated Successfully.')
-
-      setEvents((prevEvents) =>
-        prevEvents.map((ev) =>
-          ev.id === event.id
-            ? {
-                ...updatedEvent.doc,
-                date: new Date(updatedEvent.doc.date).toLocaleString('en-US', {
-                  timeZone: 'Europe/Berlin',
-                }),
-                user: event.user,
-              }
-            : ev,
-        ),
-      )
+      setFlagEvents((prev) => !prev)
       setShowEditModal(false)
       setIsLoading(false)
     } catch (err: any) {
@@ -229,6 +287,13 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
           exit={{ scale: 0.9, y: 20 }}
           className="w-full max-w-2xl"
         >
+          {showLocationManager && (
+            <LocationManager
+              token={token}
+              userId={ID || null}
+              onClose={() => setShowLocationManager(false)}
+            />
+          )}
           <form
             onSubmit={handleUpdateEvent}
             className="w-full relative mb-8 bg-white border border-gray-300 rounded-lg p-4"
@@ -274,9 +339,19 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Date</label>
               <input
-                type="datetime-local"
+                type="date"
                 value={editedEvent.date}
                 onChange={(e) => setEditedEvent({ ...editedEvent, date: e.target.value })}
+                required
+                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Time</label>
+              <input
+                type="time"
+                value={editedEvent.time}
+                onChange={(e) => setEditedEvent({ ...editedEvent, time: e.target.value })}
                 required
                 className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -293,7 +368,29 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 <span className="text-sm font-medium text-gray-700">Active</span>
               </label>
             </div>
-
+            {/* ----------Status--------- */}
+            <div className="mb-4 flex items-center">
+              <label className="flex items-center cursor-pointer">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={editedEvent.status === 'active'}
+                    onChange={toggleStatus}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`block w-14 h-8 rounded-full ${editedEvent.status === 'active' ? 'bg-blue-500' : 'bg-gray-400'}`}
+                  ></div>
+                  <div
+                    className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${editedEvent.status === 'active' ? 'transform translate-x-6' : ''}`}
+                  ></div>
+                </div>
+                <div className="ml-3 text-gray-700 font-medium">
+                  {editedEvent.status === 'active' ? 'Active' : 'Inactive'}
+                </div>
+              </label>
+            </div>
+            {/* ------------------- */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Add More Media</label>
               <input
@@ -360,9 +457,16 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
 
             {/* Location */}
             <div className="mb-4 h-64 w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Location
-              </label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setShowLocationManager(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition cursor-pointer"
+                >
+                  Add New Location
+                </button>
+              </div>
+              {renderLocations}
               <EventMap
                 interactive
                 onLocationSelect={(coords) => {
@@ -373,7 +477,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 }}
                 selectedLocation={location?.coordinates}
                 initialPosition={
-                  event.location?.coordinates ? event.location?.coordinates : undefined
+                  !location?.coordinates ? editedEvent.location?.coordinates : undefined
                 }
               />
               {location && (

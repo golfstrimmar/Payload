@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import dynamic from 'next/dynamic'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useStateContext } from '@/components/StateProvaider'
 import Image from 'next/image'
 
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
@@ -28,7 +29,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
   const [locationName, setLocationName] = useState('')
   const [coords, setCoords] = useState<[number, number] | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
+  const { setFlagLocations } = useStateContext()
   const handleSaveLocation = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -77,14 +78,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
         throw new Error(errorData.message || 'Failed to save location')
       }
 
-      const responseData = await response.json()
-      const createdLocation: Location = {
-        id: String(responseData.doc?.id || responseData.id),
-        name: responseData.doc?.name || locationData.name,
-        user: { id: userId },
-        coordinates: responseData.doc?.coordinates || locationData.coordinates,
-      }
-
+      setFlagLocations((prev) => !prev)
       toast.success('Location saved successfully')
       setLocationName('')
       setCoords(null)
@@ -104,14 +98,14 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4"
+        className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-200 p-4"
       >
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
         <motion.div
           initial={{ scale: 0, y: 0 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
-          className="w-full max-w-2xl bg-white border border-gray-300 rounded-lg p-4"
+          className="w-full h-full  bg-white border border-gray-300 rounded-lg p-4"
         >
           <Image
             onClick={onClose}
@@ -122,20 +116,14 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
             className="absolute top-4 right-4 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
           />
           <form onSubmit={handleSaveLocation}>
-            <h2 className="text-xl font-semibold mb-4">Add Location</h2>
-            <div className="mb-4 h-64 w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Location on Map
-              </label>
+            <div className="mb-4  h-160 ">
               <EventMap
                 interactive
                 onLocationSelect={(coords) => setCoords(coords)}
                 selectedLocation={coords}
               />
-              {coords && <div className="mt-2 text-sm">Selected: {coords.join(', ')}</div>}
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Location Name</label>
               <input
                 type="text"
                 value={locationName}
@@ -148,7 +136,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
             <button
               type="submit"
               disabled={isLoading}
-              className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition ${
+              className={`px-4 py-2 bg-blue-500 text-white cursor-pointer rounded-md hover:bg-blue-600 transition ${
                 isLoading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
