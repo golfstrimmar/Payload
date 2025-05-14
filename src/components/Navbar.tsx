@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 import { useUserContext } from '@/components/UserContext'
-
+import { useStateContext } from '@/components/StateProvaider'
 import { useRouter, usePathname } from 'next/navigation'
 import Uhr from '@/components/ui/Uhr/Uhr'
 
@@ -13,7 +13,7 @@ export default function Navbar() {
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const { user, setUser, setToken, role } = useUserContext()
-
+  const { setEvents } = useStateContext()
   const pathname = usePathname()
   const [activeLink, setactiveLink] = useState<string>('')
   useEffect(() => {
@@ -32,6 +32,7 @@ export default function Navbar() {
     } catch (err) {
       console.error('Error logging out:', err)
     }
+    setEvents([])
     setToken('')
     setUser('')
     localStorage.removeItem('token')

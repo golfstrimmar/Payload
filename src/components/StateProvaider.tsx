@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react'
-
+import { useUserContext } from '@/components/UserContext'
 export interface Event {
   id: string
   title: string
@@ -50,15 +50,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
   const [locations, setLocations] = useState<Location[]>([])
   const [length, setLength] = useState<number>(0)
   const [events, setEvents] = useState<Event[]>([])
-  // const [ID, setID] = useState<string>('')
-  // const [user, setUser] = useState<string>('')
-  // const [role, setRole] = useState<string>('')
-  const [token, setToken] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token') || ''
-    }
-    return ''
-  })
+  const { token } = useUserContext() // token
   const [isLoading, setIsLoading] = useState<boolean>(false)
   // ------------------------------
   useEffect(() => {
@@ -82,6 +74,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
   }, [flagLocations, token])
 
   // ------------------------------
+
   useEffect(() => {
     const fetchEvents = async () => {
       if (!token) {
@@ -139,15 +132,15 @@ export function StateProvider({ children }: { children: ReactNode }) {
     fetchEvents()
   }, [token, flagEvents])
   // ------------------------------
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (token) {
-        localStorage.setItem('token', token)
-      } else {
-        localStorage.removeItem('token')
-      }
-    }
-  }, [token])
+  // useEffect(() => {
+  //   if (typeof window !== 'undefined') {
+  //     if (token) {
+  //       localStorage.setItem('token', token)
+  //     } else {
+  //       localStorage.removeItem('token')
+  //     }
+  //   }
+  // }, [token])
   // ------------------------------
   // useEffect(() => {
   //   const checkAuth = async () => {
