@@ -88,6 +88,13 @@ const Kalendar: React.FC = () => {
   // -----------------------------------
   // -----------------------------------
   // -----------------------------------
+  // console.log('<====eventsMap====>', eventsMap)
+  // for (const [key, value] of eventsMap) {
+  //   console.log('eventsMap item', key, value)
+  // }
+  // for (const key of eventsMap.keys()) {
+  //   console.log(key)
+  // }
   const parseEventDate = useCallback((dateString: string): Date => {
     try {
       const date = new Date(dateString)
@@ -105,41 +112,30 @@ const Kalendar: React.FC = () => {
 
       const utcDate = new Date(Date.UTC(2025, selectedMonth, day))
       const dateKey = utcDate.toISOString().slice(0, 10)
+      const now = new Date().toLocaleString('de-DE', {
+        timeZone: 'Europe/Berlin',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      })
 
-      // Текущее время в Europe/Berlin
-      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Berlin' }))
+      const filteredEvents = eventsMap.get(dateKey) || []
+      const newFilteredEvents = filteredEvents.map((event) => {
+        const eventDateTime = new Date(`${event.date}T${event.time}+02:00`)
+        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Berlin' }))
 
-      const filteredEvents = (eventsMap.get(dateKey) || []).map((event) => {
-        const eventDate = parseEventDate(event.date, event.time)
-        if (isNaN(eventDate.getTime())) {
-          console.warn('Skipping event with invalid date:', event)
-          return event
-        }
-
-        console.log('<====eventDate====>', eventDate)
-        console.log(
-          '<====now====>',
-          now.toLocaleString('de-DE', {
-            timeZone: 'Europe/Berlin',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-          }),
-        )
-
-        const timeDiff = eventDate.getTime() - now.getTime()
+        const timeDiff = eventDateTime.getTime() - now.getTime()
         const isPast = timeDiff < 0
-        const isUpcoming = timeDiff > 0 && timeDiff <= 30 * 60 * 1000 // 30 минут
+        const isUpcoming = timeDiff > 0 && timeDiff <= 30 * 60 * 1000
 
         return {
           ...event,
-          status: isPast ? 'inactive' : event.status,
+          status: isPast ? 'inactive' : 'active',
           isUpcoming,
         }
       })
-
-      return filteredEvents
+      if (newFilteredEvents.length > 0) return newFilteredEvents
     },
     [selectedMonth, eventsMap, parseEventDate],
   )
@@ -184,6 +180,9 @@ const Kalendar: React.FC = () => {
 
     return days.map((day, index) => {
       const dayEvents = getEventsForDate(day)
+      if (dayEvents && dayEvents.length > 0) {
+        console.log('<====dayEvents====>', dayEvents)
+      }
 
       return (
         <div
@@ -220,7 +219,7 @@ const Kalendar: React.FC = () => {
             <div className="day-name">{day ? findDayName(day) : ''}</div>
           </div>
 
-          {dayEvents.length > 0 && (
+          {dayEvents && dayEvents.length > 0 && (
             <div className="events-container">
               {dayEvents.map((event) => (
                 <div
@@ -237,6 +236,10 @@ const Kalendar: React.FC = () => {
                     <strong> {event.title}</strong>
                     <br className="mb-1" />
                     {event.time.split(':')[0] + ':' + event.time.split(':')[1]}
+                    {/* <br className="mb-1" />
+                    {event.status}
+                    <br className="mb-1" />
+                    {event.isUpcoming ? 'Upcoming' : 'normal'} */}
                   </Link>
                 </div>
               ))}

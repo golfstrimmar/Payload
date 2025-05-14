@@ -2,20 +2,9 @@
 import React, { useState, useEffect } from 'react'
 import styles from './Uhr.module.scss'
 
+
 const Uhr: React.FC = () => {
-  const [now, setNow] = useState<string>(
-    new Date().toLocaleString('de-DE', {
-      timeZone: 'Europe/Berlin',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-      weekday: 'long',
-    }),
-  )
+  const [now, setNow] = useState<string>('')
   const updateTime = () => {
     setNow(
       new Date()

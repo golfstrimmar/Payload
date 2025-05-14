@@ -23,7 +23,6 @@ interface Event {
   title: string
   content: string
   date: string
-  status: 'active' | 'inactive'
   mediaUrls?: { url: string }[]
   location?: { coordinates: [number, number]; address?: string }
   user?: { id: string; email?: string }
@@ -52,7 +51,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     content: '',
     time: '',
     endDateTime: '',
-    status: 'inactive' as 'active' | 'inactive',
   })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -83,13 +81,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       return prev
     })
   }
-
-  const toggleStatus = useCallback(() => {
-    setNewEvent((prev) => ({
-      ...prev,
-      status: prev.status === 'active' ? 'inactive' : 'active',
-    }))
-  }, [])
 
   const parseDateTime = useCallback((dateTimeString: string): Date => {
     try {
@@ -148,13 +139,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       const selectedDate = new Date(selectedDay)
       const [hours, minutes] = newEvent.time.split(':').map(Number)
       selectedDate.setHours(hours || 0, minutes || 0)
-      console.log('<==== selectedDate====>', selectedDate)
       if (isNaN(selectedDate.getTime())) throw new Error('Invalid start date format')
 
       const eventBase = {
         title: newEvent.title,
         content: newEvent.content,
-        status: newEvent.status,
         user: ID,
         mediaUrls: mediaUrls.map((url) => ({ url })),
         location: location
@@ -242,7 +231,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           title: createdEvent.title || eventData.title,
           content: createdEvent.content || eventData.content,
           date: createdEvent.date || eventData.date,
-          status: createdEvent.status || eventData.status,
           mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
           location: createdEvent.location || eventData.location,
           user: {
@@ -258,7 +246,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       setFlagEvents((prev) => !prev)
       toast.success(`Event${createdEvents.length > 1 ? 's' : ''} created successfully`)
       setShowCreateModal(false)
-      setNewEvent({ title: '', content: '', time: '', endDateTime: '', status: 'inactive' })
       setSelectedFiles([])
       setImagePreviews([])
       setLocation(null)
@@ -418,28 +405,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            {/* ----------Status--------- */}
-            <div className="mb-4 flex items-center">
-              <label className="flex items-center cursor-pointer">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={newEvent.status === 'active'}
-                    onChange={toggleStatus}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`block w-14 h-8 rounded-full ${newEvent.status === 'active' ? 'bg-blue-500' : 'bg-gray-400'}`}
-                  ></div>
-                  <div
-                    className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${newEvent.status === 'active' ? 'transform translate-x-6' : ''}`}
-                  ></div>
-                </div>
-                <div className="ml-3 text-gray-700 font-medium">
-                  {newEvent.status === 'active' ? 'Active' : 'Inactive'}
-                </div>
-              </label>
-            </div>
+
             {/* ======Media====== */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Add Media</label>

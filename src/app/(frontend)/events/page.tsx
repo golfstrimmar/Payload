@@ -18,7 +18,6 @@ interface Event {
   title: string
   date: string
   content: string
-  status: boolean
   user?: string
   mediaUrls?: string[]
   location?: {

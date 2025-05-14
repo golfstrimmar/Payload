@@ -24,7 +24,6 @@ interface Event {
   date: string
   time: string
   content: string
-  status: 'active' | 'inactive'
   user?: { email: string; id: string }
   mediaUrls?: { url: string }[]
   location?: {
@@ -37,7 +36,7 @@ interface Event {
 }
 
 interface EditEventModalProps {
-  event: Event
+  event: string
   setShowEditModal: (show: boolean) => void
 }
 // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -68,24 +67,21 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
     address: string
   } | null>(null)
   const { isLoading, setIsLoading, ID } = useStateContext()
+  // ------------
 
   useEffect(() => {
-    if (event) {
+    if (editedEvent) {
       console.log('<==== editedEvent====>', editedEvent)
+      console.log('<==== editedEvent.mediaUrls====>', editedEvent.mediaUrls)
+      setExistingMediaUrls(editedEvent.mediaUrls)
     }
   }, [editedEvent])
 
   useEffect(() => {
-    if (event) {
-      setExistingMediaUrls(event.mediaUrls?.map((media) => media.url) || [])
+    if (existingMediaUrls) {
+      console.log('<==== existingMediaUrls====>', existingMediaUrls)
     }
-  }, [event])
-  const toggleStatus = useCallback(() => {
-    setEditedEvent((prev) => ({
-      ...prev,
-      status: prev.status === 'active' ? 'inactive' : 'active',
-    }))
-  }, [])
+  }, [existingMediaUrls])
   // ----------------renderLocations------------------
   const handleSelectLocation = useCallback(
     (selectedLocation: {
@@ -311,7 +307,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
             />
             {error && <ModalMessage message={error} open={showModal} />}
             <h2 className="text-xl font-semibold mb-4">Edit Event</h2>
-
             <div className="mb-4">
               <Input
                 typeInput="text"
@@ -323,7 +318,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 required
               />
             </div>
-
             <div className="mb-4">
               <Input
                 typeInput="text"
@@ -335,7 +329,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 required
               />
             </div>
-
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Date</label>
               <input
@@ -356,41 +349,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-
-            <div className="mb-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={editedEvent.status}
-                  onChange={(e) => setEditedEvent({ ...editedEvent, status: e.target.checked })}
-                  className="mr-2"
-                />
-                <span className="text-sm font-medium text-gray-700">Active</span>
-              </label>
-            </div>
-            {/* ----------Status--------- */}
-            <div className="mb-4 flex items-center">
-              <label className="flex items-center cursor-pointer">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={editedEvent.status === 'active'}
-                    onChange={toggleStatus}
-                    className="sr-only"
-                  />
-                  <div
-                    className={`block w-14 h-8 rounded-full ${editedEvent.status === 'active' ? 'bg-blue-500' : 'bg-gray-400'}`}
-                  ></div>
-                  <div
-                    className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${editedEvent.status === 'active' ? 'transform translate-x-6' : ''}`}
-                  ></div>
-                </div>
-                <div className="ml-3 text-gray-700 font-medium">
-                  {editedEvent.status === 'active' ? 'Active' : 'Inactive'}
-                </div>
-              </label>
-            </div>
-            {/* ------------------- */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Add More Media</label>
               <input
@@ -401,6 +359,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
               />
             </div>
 
+            {/* Media */}
             {existingMediaUrls.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Existing Media</h3>
@@ -427,7 +386,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 </div>
               </div>
             )}
-
             {imagePreviews.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">New Media</h3>
@@ -484,7 +442,6 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 <div className="mt-2 text-sm">Selected: {location.coordinates.join(', ')}</div>
               )}
             </div>
-
             <Button buttonText="Update Event" buttonType="submit" />
           </form>
         </motion.div>

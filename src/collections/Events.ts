@@ -63,18 +63,7 @@ export const Events: CollectionConfig = {
       type: 'text',
       required: true,
     },
-    {
-      name: 'status',
-      type: 'text',
-      defaultValue: 'inactive',
-      required: true,
-      validate: (value) => {
-        if (value !== 'active' && value !== 'inactive') {
-          return 'Status must be either "active" or "inactive"'
-        }
-        return true
-      },
-    },
+
     {
       name: 'mediaUrls',
       type: 'array',

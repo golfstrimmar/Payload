@@ -5,13 +5,13 @@ import Link from 'next/link'
 
 import { useStateContext } from '@/components/StateProvaider'
 import { useRouter, useParams, usePathname } from 'next/navigation'
-import Uhr from '@/components/Uhr/Uhr'
+import Uhr from '@/components/ui/Uhr/Uhr'
 
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
-  const { user, setToken, setUser } = useStateContext()
+  const { user, setToken, setUser, role } = useStateContext()
   const pathname = usePathname()
   const [activeLink, setactiveLink] = useState<string>('')
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function Navbar() {
           <Link href="/">My App</Link>
         </div>
         <Uhr />
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 items-center">
           <Link
             href="/"
             className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}
@@ -70,9 +70,11 @@ export default function Navbar() {
             </Link>
           )}
           {isAuthenticated && (
-            <div className="flex items-center space-x-2">
-              <span>User:</span>
+            <div className=" grid grid-cols-[.5fr_2fr]">
+              <span>user:</span>
               <h2 className="text-blue-200 font-bold lh-1">{user}</h2>
+              <span>role:</span>
+              <p className="text-blue-200 font-bold lh-1">{role}</p>
             </div>
           )}
           {isAuthenticated ? (

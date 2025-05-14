@@ -108,70 +108,6 @@ const EventCard: React.FC<EventCardProps> = () => {
       toast.error(error.message || 'Error deleting event')
     }
   }
-  const toggleStatus = async () => {
-    if (!token) {
-      toast.error('You must be logged in to update status')
-      router.push('/login')
-      return
-    }
-
-    if (!event.id) {
-      toast.error('Invalid event ID')
-      return
-    }
-
-    const newStatus = event.status === 'active' ? 'inactive' : 'active'
-    const prevEvent = { ...event }
-
-    setIsLoading(true)
-
-    try {
-      // Логируем данные перед отправкой
-      console.log('Updating event status:', {
-        eventId: event.id,
-        newStatus,
-        token: Boolean(token), // Проверяем наличие токена
-      })
-
-      const response = await fetch(`/api/events/${event.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `JWT ${token}`,
-        },
-        body: JSON.stringify({
-          status: newStatus, // Упрощаем структуру данных
-        }),
-      })
-
-      // Логируем ответ сервера
-      console.log('Server response:', {
-        status: response.status,
-        ok: response.ok,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('Error response data:', errorData)
-        throw new Error(errorData.message || `Failed to update status: ${response.status}`)
-      }
-
-      // Обновляем состояние только после успешного ответа от сервера
-      setEvent({ ...event, status: newStatus })
-      setEvents(events.map((e) => (e.id === event.id ? { ...e, status: newStatus } : e)))
-
-      toast.success(`Event status updated to ${newStatus}`)
-    } catch (error: any) {
-      console.error('Full error updating status:', error)
-      toast.error(error.message || 'Error updating status')
-
-      // Восстанавливаем предыдущее состояние
-      setEvent(prevEvent)
-      setEvents(events.map((e) => (e.id === event.id ? prevEvent : e)))
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   // ----------------------------------
   const handleEditEvent = (event: Event) => {
@@ -198,87 +134,75 @@ const EventCard: React.FC<EventCardProps> = () => {
         events
       </Link>
       <br />
-      <section className="grid grid-cols-[500px_1fr] gap-4 w-full">
-        <div className="flex flex-col gap-3">
-          {event.mediaUrls &&
-            event.mediaUrls.length > 0 &&
-            event.mediaUrls.map((url, index) => (
-              <div
-                key={index}
-                className={`w-full shadow-[0px_0px_8px_rgba(0,0,0,0.25)] cursor-pointer hover:shadow-[0px_0px_16px_rgba(0,0,0,0.25)] transition-all duration-300 ${
-                  run === index
-                    ? 'fixed w-[100vw] h-[100vh] z-500 top-0 left-0 bg-[rgba(0,0,0,0.9)]'
-                    : ''
-                }`}
-                onClick={() => {
-                  setRun(index)
-                }}
-              >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setRun(null)
-                  }}
-                  className={` ${
-                    run === index ? 'block fixed top-4 right-4 z-500 cursor-pointer' : 'hidden'
-                  }`}
-                >
-                  <Image src="/assets/svg/cross.svg" width={20} height={20} alt="close" />
-                </button>
-                <img
-                  src={url}
-                  alt={url}
-                  className={`aspect-cover min-h-[300px] ${
+      <section className="">
+        <div className="flex items-center gap-4 w-full">
+          <div className="flex flex-col gap-3 max-w-[500px]">
+            {event.mediaUrls &&
+              event.mediaUrls.length > 0 &&
+              event.mediaUrls.map((url, index) => (
+                <div
+                  key={index}
+                  className={`w-full shadow-[0px_0px_8px_rgba(0,0,0,0.25)] cursor-pointer hover:shadow-[0px_0px_16px_rgba(0,0,0,0.25)] transition-all duration-300 ${
                     run === index
-                      ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+                      ? 'fixed w-[100vw] h-[100vh] z-500 top-0 left-0 bg-[rgba(0,0,0,0.9)]'
                       : ''
                   }`}
-                />
-              </div>
-            ))}
-        </div>
-        <div className="flex flex-col gap-3">
-          <strong className="text-[30px]">{event.title}</strong>
-          <p className="text-[20px] my-2 text-gray-800 border border-gray-400 p-3">
-            {event.content}
-          </p>
-          <h3 className="text-[25px]">{event.date}</h3>
-          <h3 className="text-[25px]">
-            {event.time.split(':')[0] + ':' + event.time.split(':')[1]}
-          </h3>
-          <p className="text-sm text-gray-600">User: {event.user?.email}</p>
-          <div className="flex items-center gap-4">
-            <label className="text-sm text-gray-600">Status:</label>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={event.status === 'active'}
-                onChange={toggleStatus}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-              <span className="ml-2 text-sm font-medium text-gray-700">
-                {event.status === 'active' ? 'Active' : 'Inactive'}
-              </span>
-            </label>
+                  onClick={() => {
+                    setRun(index)
+                  }}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setRun(null)
+                    }}
+                    className={` ${
+                      run === index ? 'block fixed top-4 right-4 z-500 cursor-pointer' : 'hidden'
+                    }`}
+                  >
+                    <Image src="/assets/svg/cross.svg" width={20} height={20} alt="close" />
+                  </button>
+                  <img
+                    src={url}
+                    alt={url}
+                    className={`aspect-cover min-h-[300px] ${
+                      run === index
+                        ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+                        : ''
+                    }`}
+                  />
+                </div>
+              ))}
           </div>
-          <div className="mt-auto flex gap-2">
-            <Image
-              onClick={() => handleEditEvent(event)}
-              src="/assets/svg/edit.svg"
-              width={20}
-              height={20}
-              alt="edit"
-              className="cursor-pointer hover:scale-110 transition-all duration-200"
-            />
-            <Image
-              onClick={() => handleDeleteEvent(event.id)}
-              src="/assets/svg/cross.svg"
-              width={20}
-              height={20}
-              alt="delete"
-              className="cursor-pointer hover:scale-110 transition-all duration-200"
-            />
+          <div className="flex flex-col gap-3">
+            <strong className="text-[30px]">{event.title}</strong>
+            <p className="text-[20px] my-2 text-gray-800 border border-gray-400 p-3">
+              {event.content}
+            </p>
+            <h3 className="text-[25px]">{event.date}</h3>
+            <h3 className="text-[25px]">
+              {event.time.split(':')[0] + ':' + event.time.split(':')[1]}
+            </h3>
+            <p className="text-sm text-gray-600">User: {event.user?.email}</p>
+
+            <div className="mt-auto flex gap-10">
+              <Image
+                onClick={() => handleEditEvent(event)}
+                src="/assets/svg/edit.svg"
+                width={25}
+                height={25}
+                alt="edit"
+                className="cursor-pointer hover:scale-110 transition-all duration-200"
+              />
+              <Image
+                onClick={() => handleDeleteEvent(event.id)}
+                src="/assets/svg/cross.svg"
+                width={25}
+                height={25}
+                alt="delete"
+                className="cursor-pointer hover:scale-110 transition-all duration-200"
+              />
+            </div>
           </div>
         </div>
         {event.location && (

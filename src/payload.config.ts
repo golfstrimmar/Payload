@@ -17,9 +17,11 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     // Только role: 'admin' может войти в админ-панель
-    // access: ({ req: { user } }) => user?.role === 'admin',
+    access: ({ req: { user } }) => user?.role === 'admin',
+    // access: ({ req: { user } }) => !!user,
   },
   collections: [Users, Media, Events, Locations],
+
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -32,6 +34,7 @@ export default buildConfig({
       connectionTimeoutMillis: 5000,
     },
   }),
+
   sharp,
   plugins: [],
 })

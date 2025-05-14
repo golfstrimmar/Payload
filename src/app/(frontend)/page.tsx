@@ -13,13 +13,17 @@ export default async function HomePage() {
   const payload = await getPayload({ config: payloadConfig })
   const { user } = await payload.auth({ headers })
   console.log('<==== user =======>', user)
-  // Получаем пользователей
-  const users = await payload.find({
-    collection: 'users',
-    limit: 10,
-  })
 
-  // Получаем медиа-файлы
+  let users = { docs: [] }
+  try {
+    users = await payload.find({
+      collection: 'users',
+      limit: 10,
+    })
+  } catch (error) {
+    console.error('Error fetching users:', error)
+  }
+
   const media = await payload.find({
     collection: 'media',
     limit: 10,

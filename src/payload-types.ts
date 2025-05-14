@@ -164,7 +164,6 @@ export interface Event {
   date: string;
   content: string;
   title: string;
-  status: string;
   mediaUrls?:
     | {
         url?: string | null;
@@ -312,7 +311,6 @@ export interface EventsSelect<T extends boolean = true> {
   date?: T;
   content?: T;
   title?: T;
-  status?: T;
   mediaUrls?:
     | T
     | {
