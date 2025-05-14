@@ -12,7 +12,8 @@ import Loading from '@/components/Loading/Loading'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
-import { time } from 'console'
+import { useLocationsContext } from '@/components/LocationsContext'
+
 import LocationManager from '@/components/LocationManager/LocationManager'
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
   ssr: false,
@@ -43,18 +44,12 @@ interface EditEventModalProps {
 // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal }) => {
   const router = useRouter()
-
-  const {
-    ID: currentUserId,
-    token,
-    setFlagEvents,
-    events,
-    locations,
-    setFlagLocations,
-  } = useStateContext()
+  const { token } = useUserContext()
+  const { ID: currentUserId, setFlagEvents, events } = useStateContext()
   const [editedEvent, setEditedEvent] = useState<Event>(
     events.find((e) => String(e.id) === String(event)) || {},
   )
+  const { locations, setFlagLocations } = useLocationsContext()
   const [showLocationManager, setShowLocationManager] = useState(false)
   const [showModal, setShowModal] = useState<boolean>(false)
   const [error, setError] = useState<string>('')

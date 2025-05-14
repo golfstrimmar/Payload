@@ -11,8 +11,6 @@ interface UserContextType {
   setRole: React.Dispatch<React.SetStateAction<string>>
   ID: string
   setID: React.Dispatch<React.SetStateAction<string>>
-  isLoading: boolean
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)

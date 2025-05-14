@@ -10,7 +10,6 @@ import Uhr from '@/components/ui/Uhr/Uhr'
 
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
   const { user, setUser, setToken, role } = useUserContext()
   const { setEvents } = useStateContext()
@@ -37,7 +36,6 @@ export default function Navbar() {
     setUser('')
     localStorage.removeItem('token')
     setIsAuthenticated(false)
-    setIsAdmin(false)
     router.push('/')
   }
 
@@ -64,7 +62,7 @@ export default function Navbar() {
               Events
             </Link>
           )}
-          {isAdmin && (
+          {role === 'admin' && (
             <Link
               href="/admin"
               className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/admin' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}

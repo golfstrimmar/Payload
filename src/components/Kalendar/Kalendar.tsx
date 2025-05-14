@@ -10,7 +10,6 @@ import './Kalendar.scss'
 import './KalendarDeep.scss'
 import Link from 'next/link'
 import DeleteEventsModal from '@/components/DeleteEventsModal/DeleteEventsModal'
-
 const GERMAN_MONTHS = [
   'Januar',
   'Februar',
@@ -90,6 +89,7 @@ const Kalendar: React.FC = () => {
   }, [events])
   // -----------------------------------
   // -----------------------------------
+
   // -----------------------------------
   // -----------------------------------
   // console.log('<====eventsMap====>', eventsMap)
@@ -184,9 +184,6 @@ const Kalendar: React.FC = () => {
 
     return days.map((day, index) => {
       const dayEvents = getEventsForDate(day)
-      if (dayEvents && dayEvents.length > 0) {
-        console.log('<====dayEvents====>', dayEvents)
-      }
 
       return (
         <div
@@ -268,7 +265,6 @@ const Kalendar: React.FC = () => {
           />
         )}
       </AnimatePresence>
-
       <div>
         <div className="flex justify-between mb-4">
           <button

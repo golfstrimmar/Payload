@@ -43,24 +43,9 @@ export default function EventsPage() {
   }
 
   return (
-    <div className=" mx-4 mt-10 p-6 bg-white rounded-lg shadow-md">
+    <div className=" mx-4 mt-2 p-2 bg-white rounded-lg shadow-md">
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
       {isLoading && <Loading />}
-
-      <h2 className="text-center text-2xl font-bold mb-6">Your Events</h2>
-      <div className="flex flex-col mb-6 items-center gap-2">
-        <p className="text-gray-600 ">
-          You are logged in as: <strong>{user}</strong>
-        </p>
-        <p className="text-gray-600">
-          You role: <strong>{role}</strong>
-        </p>
-        {role === 'admin' && (
-          <Link href="/admin" className="text-blue-500 hover:underline" onClick={handleAdminClick}>
-            Go to Admin
-          </Link>
-        )}
-      </div>
       <Kalendar />
     </div>
   )

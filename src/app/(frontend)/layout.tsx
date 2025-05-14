@@ -8,7 +8,7 @@ export const metadata = {
 }
 import { StateProvider } from '@/components/StateProvaider'
 import { UserProvider } from '@/components/UserContext'
-
+import { LocationsProvider } from '@/components/LocationsContext'
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
@@ -17,8 +17,10 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <body>
         <UserProvider>
           <StateProvider>
-            <Navbar />
-            <main>{children}</main>
+            <LocationsProvider>
+              <Navbar />
+              <main>{children}</main>
+            </LocationsProvider>
           </StateProvider>
         </UserProvider>
       </body>

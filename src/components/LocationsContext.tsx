@@ -9,6 +9,14 @@ import {
   useCallback,
   ReactNode,
 } from 'react'
+import { useUserContext } from '@/components/UserContext'
+
+interface Location {
+  id: string
+  name: string
+  user: { id: string }
+  coordinates: { latitude: number; longitude: number }[]
+}
 
 interface LocationsContextType {
   locations: Location[]
@@ -20,12 +28,16 @@ interface LocationsContextType {
 
 const LocationsContext = createContext<LocationsContextType | undefined>(undefined)
 
-export function LocationsProvider({ children, token }: { children: ReactNode; token: string }) {
+export function LocationsProvider({ children }: { children: ReactNode }) {
+  const { token } = useUserContext()
   const [locations, setLocations] = useState<Location[]>([])
   const [flagLocations, setFlagLocations] = useState<boolean>(false)
 
   const fetchLocations = useCallback(async () => {
-    if (!token) return
+    if (!token) {
+      setLocations([])
+      return
+    }
     try {
       const response = await fetch('/api/locations', {
         headers: { Authorization: `JWT ${token}` },
@@ -35,9 +47,11 @@ export function LocationsProvider({ children, token }: { children: ReactNode; to
         setLocations(docs)
       } else {
         console.error('Failed to fetch locations:', response.status, response.statusText)
+        setLocations([])
       }
     } catch (err) {
       console.error('Error fetching locations:', err)
+      setLocations([])
     }
   }, [token])
 

@@ -20,59 +20,23 @@ interface Location {
 }
 
 interface StateContextType {
-  user: string
-  setUser: React.Dispatch<React.SetStateAction<string>>
-  token: string
-  setToken: React.Dispatch<React.SetStateAction<string>>
-  role: string
-  setRole: React.Dispatch<React.SetStateAction<string>>
-  ID: string
-  setID: React.Dispatch<React.SetStateAction<string>>
   isLoading: boolean
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
   length: number
   setLength: React.Dispatch<React.SetStateAction<number>>
   events: Event[]
   setEvents: React.Dispatch<React.SetStateAction<Event[]>>
-  locations: Location[]
-  setLocations: React.Dispatch<React.SetStateAction<Location[]>>
-  flagLocations: boolean
-  setFlagLocations: React.Dispatch<React.SetStateAction<boolean>>
-  flagEvents: boolean
   setFlagEvents: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const StateContext = createContext<StateContextType | undefined>(undefined)
 
 export function StateProvider({ children }: { children: ReactNode }) {
-  const [flagLocations, setFlagLocations] = useState<boolean>(false)
   const [flagEvents, setFlagEvents] = useState<boolean>(false)
-  const [locations, setLocations] = useState<Location[]>([])
   const [length, setLength] = useState<number>(0)
   const [events, setEvents] = useState<Event[]>([])
   const { token } = useUserContext() // token
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  // ------------------------------
-  useEffect(() => {
-    const fetchLocations = async () => {
-      if (!token) return
-      try {
-        const response = await fetch('/api/locations', {
-          headers: { Authorization: `JWT ${token}` },
-        })
-        if (response.ok) {
-          const { docs } = await response.json()
-          setLocations(docs)
-        } else {
-          console.error('Failed to fetch locations:', response.status, response.statusText)
-        }
-      } catch (err) {
-        console.error('Error fetching locations:', err)
-      }
-    }
-    fetchLocations()
-  }, [flagLocations, token])
-
   // ------------------------------
 
   useEffect(() => {
@@ -131,44 +95,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
     }
     fetchEvents()
   }, [token, flagEvents])
-  // ------------------------------
-  // useEffect(() => {
-  //   if (typeof window !== 'undefined') {
-  //     if (token) {
-  //       localStorage.setItem('token', token)
-  //     } else {
-  //       localStorage.removeItem('token')
-  //     }
-  //   }
-  // }, [token])
-  // ------------------------------
-  // useEffect(() => {
-  //   const checkAuth = async () => {
-  //     if (!token) {
-  //       console.log('<==== No token ====>')
-  //       setUser('')
-  //       return
-  //     }
-  //     try {
-  //       const response = await fetch('/api/users/me', {
-  //         headers: { Authorization: `JWT ${token}` },
-  //       })
-  //       if (response.ok) {
-  //         const { user } = await response.json()
-  //         setUser(user?.email || '')
-  //         setRole(user?.role || '')
-  //         setID(user?.id || '')
-  //       } else {
-  //         console.error('Failed to fetch user:', response.status, response.statusText)
-  //         setUser('')
-  //       }
-  //     } catch (err) {
-  //       console.error('Error checking auth:', err)
-  //       setUser('')
-  //     }
-  //   }
-  //   checkAuth()
-  // }, [token])
+
   // ------------------------------
   const contextValue = useMemo(
     () => ({
@@ -178,14 +105,10 @@ export function StateProvider({ children }: { children: ReactNode }) {
       setLength,
       events,
       setEvents,
-      locations,
-      setLocations,
-      flagLocations,
-      setFlagLocations,
       flagEvents,
       setFlagEvents,
     }),
-    [isLoading, length, events, locations, flagLocations, flagEvents, setFlagEvents],
+    [isLoading, length, events, flagEvents, setFlagEvents],
   )
 
   return <StateContext.Provider value={contextValue}>{children}</StateContext.Provider>
