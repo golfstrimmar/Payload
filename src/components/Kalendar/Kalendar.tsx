@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { useStateContext } from '@/components/StateProvaider'
+import { useUserContext } from '@/components/UserContext'
+
 import { AnimatePresence } from 'framer-motion'
 import AddEventModal from '@/components/AddEventModal/AddEventModal'
 import './Kalendar.scss'
@@ -37,7 +39,9 @@ interface Event {
 
 const Kalendar: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
-  const { events, setEvents, user, setFlagEvents } = useStateContext()
+  const { events, setEvents, setFlagEvents } = useStateContext()
+  const { user } = useUserContext()
+
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
   const [selectedDay, setselectedDay] = useState<string>('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)

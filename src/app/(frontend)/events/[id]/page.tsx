@@ -8,6 +8,7 @@ import toast, { Toaster } from 'react-hot-toast'
 import { AnimatePresence } from 'framer-motion'
 import EditEventModal from '@/components/EditEventModal'
 import { useStateContext } from '@/components/StateProvaider'
+import { useUserContext } from '@/components/UserContext'
 import Link from 'next/link'
 
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
@@ -49,7 +50,8 @@ const EventCard: React.FC<EventCardProps> = () => {
   const [showEditModal, setShowEditModal] = useState<boolean>(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const router = useRouter()
-  const { token, setIsLoading, events, setEvents } = useStateContext()
+  const { setIsLoading, events, setEvents } = useStateContext()
+  const { token } = useUserContext()
   useEffect(() => {
     if (events) {
       console.log('<==== events on eventpage====>', events)

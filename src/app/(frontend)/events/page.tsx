@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button/Button'
 import AddEventModal from '@/components/AddEventModal/AddEventModal'
 import { useStateContext } from '@/components/StateProvaider'
+import { useUserContext } from '@/components/UserContext'
 import toast, { Toaster } from 'react-hot-toast'
 import Loading from '@/components/Loading/Loading'
 import { AnimatePresence } from 'framer-motion'
@@ -30,7 +31,8 @@ interface Event {
 }
 
 export default function EventsPage() {
-  const { user, role, isLoading, setIsLoading } = useStateContext()
+  const { isLoading, setIsLoading } = useStateContext()
+  const { user, role } = useUserContext()
   const router = useRouter()
 
   const handleAdminClick = (e: React.MouseEvent) => {

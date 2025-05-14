@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useStateContext } from '@/components/StateProvaider'
+import { useUserContext } from '@/components/UserContext'
 import Button from '@/components/ui/Button/Button'
 import Loading from '@/components/Loading/Loading'
 import toast, { Toaster } from 'react-hot-toast'
@@ -12,7 +13,8 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [isRegister, setIsRegister] = useState(false)
   const router = useRouter()
-  const { setToken, isLoading, setIsLoading } = useStateContext()
+  const { isLoading, setIsLoading } = useStateContext()
+  const { setToken } = useUserContext()
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')

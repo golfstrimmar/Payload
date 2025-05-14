@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button/Button'
 import Image from 'next/image'
 import { useStateContext } from '@/components/StateProvaider'
+import { useUserContext } from '@/components/UserContext'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
@@ -43,7 +44,8 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   currentUser,
   selectedDay,
 }) => {
-  const { token, setIsLoading, locations, ID, setFlagLocations, setFlagEvents } = useStateContext()
+  const { setIsLoading, locations, setFlagLocations, setFlagEvents } = useStateContext()
+  const { token, ID } = useUserContext()
 
   const router = useRouter()
   const [newEvent, setNewEvent] = useState({

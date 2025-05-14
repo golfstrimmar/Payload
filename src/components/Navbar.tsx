@@ -3,15 +3,17 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-import { useStateContext } from '@/components/StateProvaider'
-import { useRouter, useParams, usePathname } from 'next/navigation'
+import { useUserContext } from '@/components/UserContext'
+
+import { useRouter, usePathname } from 'next/navigation'
 import Uhr from '@/components/ui/Uhr/Uhr'
 
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
-  const { user, setToken, setUser, role } = useStateContext()
+  const { user, setUser, setToken, role } = useUserContext()
+
   const pathname = usePathname()
   const [activeLink, setactiveLink] = useState<string>('')
   useEffect(() => {

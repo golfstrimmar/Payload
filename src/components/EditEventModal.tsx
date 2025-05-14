@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button/Button'
 import ModalMessage from '@/components/ModalMessage/ModalMessage'
 import Image from 'next/image'
 import { useStateContext } from '@/components/StateProvaider'
+import { useUserContext } from '@/components/UserContext'
 import Loading from '@/components/Loading/Loading'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -66,7 +67,8 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
     coordinates: [number, number]
     address: string
   } | null>(null)
-  const { isLoading, setIsLoading, ID } = useStateContext()
+  const { isLoading, setIsLoading } = useStateContext()
+  const { ID } = useUserContext()
   // ------------
 
   useEffect(() => {

@@ -27,7 +27,6 @@ export function UserProvider({ children }: { children: ReactNode }) {
   })
   const [role, setRole] = useState<string>('')
   const [ID, setID] = useState<string>('')
-  const [isLoading, setIsLoading] = useState<boolean>(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -77,10 +76,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setRole,
       ID,
       setID,
-      isLoading,
-      setIsLoading,
     }),
-    [user, token, role, ID, isLoading],
+    [user, token, role, ID],
   )
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>

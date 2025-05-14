@@ -50,9 +50,9 @@ export function StateProvider({ children }: { children: ReactNode }) {
   const [locations, setLocations] = useState<Location[]>([])
   const [length, setLength] = useState<number>(0)
   const [events, setEvents] = useState<Event[]>([])
-  const [ID, setID] = useState<string>('')
-  const [user, setUser] = useState<string>('')
-  const [role, setRole] = useState<string>('')
+  // const [ID, setID] = useState<string>('')
+  // const [user, setUser] = useState<string>('')
+  // const [role, setRole] = useState<string>('')
   const [token, setToken] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('token') || ''
@@ -149,44 +149,36 @@ export function StateProvider({ children }: { children: ReactNode }) {
     }
   }, [token])
   // ------------------------------
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (!token) {
-        console.log('<==== No token ====>')
-        setUser('')
-        return
-      }
-      try {
-        const response = await fetch('/api/users/me', {
-          headers: { Authorization: `JWT ${token}` },
-        })
-        if (response.ok) {
-          const { user } = await response.json()
-          setUser(user?.email || '')
-          setRole(user?.role || '')
-          setID(user?.id || '')
-        } else {
-          console.error('Failed to fetch user:', response.status, response.statusText)
-          setUser('')
-        }
-      } catch (err) {
-        console.error('Error checking auth:', err)
-        setUser('')
-      }
-    }
-    checkAuth()
-  }, [token])
+  // useEffect(() => {
+  //   const checkAuth = async () => {
+  //     if (!token) {
+  //       console.log('<==== No token ====>')
+  //       setUser('')
+  //       return
+  //     }
+  //     try {
+  //       const response = await fetch('/api/users/me', {
+  //         headers: { Authorization: `JWT ${token}` },
+  //       })
+  //       if (response.ok) {
+  //         const { user } = await response.json()
+  //         setUser(user?.email || '')
+  //         setRole(user?.role || '')
+  //         setID(user?.id || '')
+  //       } else {
+  //         console.error('Failed to fetch user:', response.status, response.statusText)
+  //         setUser('')
+  //       }
+  //     } catch (err) {
+  //       console.error('Error checking auth:', err)
+  //       setUser('')
+  //     }
+  //   }
+  //   checkAuth()
+  // }, [token])
   // ------------------------------
   const contextValue = useMemo(
     () => ({
-      user,
-      setUser,
-      token,
-      setToken,
-      role,
-      setRole,
-      ID,
-      setID,
       isLoading,
       setIsLoading,
       length,
@@ -200,19 +192,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
       flagEvents,
       setFlagEvents,
     }),
-    [
-      user,
-      token,
-      role,
-      ID,
-      isLoading,
-      length,
-      events,
-      locations,
-      flagLocations,
-      flagEvents,
-      setFlagEvents,
-    ],
+    [isLoading, length, events, locations, flagLocations, flagEvents, setFlagEvents],
   )
 
   return <StateContext.Provider value={contextValue}>{children}</StateContext.Provider>

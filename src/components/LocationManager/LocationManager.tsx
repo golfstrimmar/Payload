@@ -30,6 +30,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
   const [coords, setCoords] = useState<[number, number] | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { setFlagLocations } = useStateContext()
+
   const handleSaveLocation = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)

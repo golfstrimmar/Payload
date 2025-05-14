@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStateContext } from '@/components/StateProvaider'
+import { useUserContext } from '@/components/UserContext'
 import toast, { Toaster } from 'react-hot-toast'
 import Image from 'next/image'
 
@@ -28,7 +29,8 @@ const DeleteEventsModal: React.FC<DeleteEventsModalProps> = ({
   setEvents,
   setShowDeleteModal,
 }) => {
-  const { token, setIsLoading } = useStateContext()
+  const { setIsLoading } = useStateContext()
+  const { token } = useUserContext()
   const [searchQuery, setSearchQuery] = useState('')
 
   const filteredEvents = searchQuery
