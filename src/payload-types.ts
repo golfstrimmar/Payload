@@ -164,11 +164,17 @@ export interface Event {
   date: string;
   content: string;
   title: string;
+  /**
+   * Array of media URLs (e.g., ["url1", "url2"])
+   */
   mediaUrls?:
     | {
-        url?: string | null;
-        id?: string | null;
-      }[]
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
     | null;
   location?: {
     /**
@@ -311,12 +317,7 @@ export interface EventsSelect<T extends boolean = true> {
   date?: T;
   content?: T;
   title?: T;
-  mediaUrls?:
-    | T
-    | {
-        url?: T;
-        id?: T;
-      };
+  mediaUrls?: T;
   location?:
     | T
     | {

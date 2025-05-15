@@ -1,85 +1,119 @@
 'use client'
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import styles from './EditEventModal.module.scss'
 import Input from '@/components/ui/Input/Input'
 import { useRouter } from 'next/navigation'
 import Button from '@/components/ui/Button/Button'
-import ModalMessage from '@/components/ModalMessage/ModalMessage'
 import Image from 'next/image'
 import { useStateContext } from '@/components/StateProvaider'
 import { useUserContext } from '@/components/UserContext'
-import Loading from '@/components/Loading/Loading'
+import { useLocationsContext } from '@/components/LocationsContext'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
-import { useLocationsContext } from '@/components/LocationsContext'
-
 import LocationManager from '@/components/LocationManager/LocationManager'
+import ClockUhr from '@/components/ui/ClockUhr/ClockUhr'
+import Calendar from '@/components/ui/Calendar/Calendar'
+
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
   ssr: false,
-  loading: () => <div className="h-64 bg-gray-100 animate-pulse" />,
+  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-md" />,
 })
 
 interface Event {
   id: string
   title: string
-  date: string
-  time: string
   content: string
-  user?: { email: string; id: string }
-  mediaUrls?: { url: string }[]
-  location?: {
-    coordinates?: {
-      type: 'Point'
-      coordinates: [number, number] // [lng, lat]
-    }
-    address?: string
-  }
+  date: string
+  time?: string
+  mediaUrls?: string[]
+  location?: { coordinates: [number, number]; address?: string }
+  user?: { id: string; email?: string }
 }
 
 interface EditEventModalProps {
-  event: string
+  event: string // ID события
   setShowEditModal: (show: boolean) => void
+  currentUser: { id: string; email?: string } | null
 }
-// xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal }) => {
-  const router = useRouter()
-  const { token } = useUserContext()
-  const { ID: currentUserId, setFlagEvents, events } = useStateContext()
-  const [editedEvent, setEditedEvent] = useState<Event>(
-    events.find((e) => String(e.id) === String(event)) || {},
-  )
+
+const EditEventModal: React.FC<EditEventModalProps> = ({
+  event,
+  setShowEditModal,
+  currentUser,
+}) => {
   const { locations, setFlagLocations } = useLocationsContext()
-  const [showLocationManager, setShowLocationManager] = useState(false)
-  const [showModal, setShowModal] = useState<boolean>(false)
-  const [error, setError] = useState<string>('')
+  const { token, ID } = useUserContext()
+  const { setIsLoading, setFlagEvents, events } = useStateContext()
+  const router = useRouter()
+
+  // Инициализация состояния события
+  const initialEvent = events.find((e) => String(e.id) === String(event)) || {
+    id: event,
+    title: '',
+    content: '',
+    date: '',
+    time: '00:00',
+    mediaUrls: [],
+    location: undefined,
+    user: currentUser,
+  }
+
+  const [editedEvent, setEditedEvent] = useState({
+    title: initialEvent.title || '',
+    content: initialEvent.content || '',
+    date: new Date(initialEvent.date).toISOString().split('T')[0],
+    time: initialEvent.time,
+    endDate: '',
+    endTime: '',
+  })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
-  const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>(
-    event.mediaUrls?.map((media) => media.url) || [],
-  )
+  const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>(initialEvent.mediaUrls || [])
   const [location, setLocation] = useState<{
     coordinates: [number, number]
     address: string
-  } | null>(null)
-  const { isLoading, setIsLoading } = useStateContext()
-  const { ID } = useUserContext()
-  // ------------
+  } | null>(
+    initialEvent.location
+      ? {
+          coordinates: initialEvent.location.coordinates,
+          address: initialEvent.location.address || '',
+        }
+      : null,
+  )
+  const [showLocationManager, setShowLocationManager] = useState(false)
 
-  useEffect(() => {
-    if (editedEvent) {
-      console.log('<==== editedEvent====>', editedEvent)
-      console.log('<==== editedEvent.mediaUrls====>', editedEvent.mediaUrls)
-      setExistingMediaUrls(editedEvent.mediaUrls)
+  // Обработка загрузки новых файлов
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files)
+      setSelectedFiles(filesArray)
+      const previews = filesArray.map((file) => URL.createObjectURL(file))
+      setImagePreviews((prev) => [...prev, ...previews])
     }
-  }, [editedEvent])
+  }
 
-  useEffect(() => {
-    if (existingMediaUrls) {
-      console.log('<==== existingMediaUrls====>', existingMediaUrls)
-    }
-  }, [existingMediaUrls])
-  // ----------------renderLocations------------------
+  // Удаление нового изображения
+  const handleRemoveNewImage = (previewToRemove: string) => {
+    setImagePreviews((prev) => prev.filter((preview) => preview !== previewToRemove))
+    setSelectedFiles((prev) => {
+      const index = imagePreviews.indexOf(previewToRemove)
+      if (index !== -1) {
+        const newFiles = [...prev]
+        newFiles.splice(index, 1)
+        return newFiles
+      }
+      return prev
+    })
+  }
+
+  // Удаление существующего изображения
+  const handleRemoveExistingImage = (urlToRemove: string) => {
+    setExistingMediaUrls((prev) => prev.filter((url) => url !== urlToRemove))
+  }
+
+  // Выбор локации
   const handleSelectLocation = useCallback(
     (selectedLocation: {
       name: string
@@ -94,6 +128,8 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
     },
     [],
   )
+
+  // Удаление локации
   const handleDeleteLocation = async (id: string) => {
     try {
       const response = await fetch(`/api/locations/${id}`, {
@@ -115,12 +151,14 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
       toast.error(err.message || 'Failed to delete location')
     }
   }
+
+  // Рендеринг списка локаций
   const renderLocations = useMemo(
     () =>
       locations.length > 0 ? (
         <div className="mb-2 rounded-md border border-gray-300 p-2">
           <h3 className="text-lg font-bold text-gray-700 mb-1">Saved Locations:</h3>
-          <div className="mb-2  rounded-md ">
+          <div className="mb-2 rounded-md">
             {locations.map((loc) => (
               <p
                 key={loc.id}
@@ -150,49 +188,48 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
       ),
     [locations, location, handleSelectLocation],
   )
-  // --------------
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files)
-      setSelectedFiles(filesArray)
-      const previews = filesArray.map((file) => URL.createObjectURL(file))
-      setImagePreviews((prev) => [...prev, ...previews])
+
+  // Обработка изменения даты
+  const handleDateChange = (date: Date, field: 'date' | 'endDate') => {
+    const newDate = new Date(date)
+    newDate.setHours(0, 0, 0, 0)
+    const year = newDate.getFullYear()
+    const month = String(newDate.getMonth() + 1).padStart(2, '0')
+    const day = String(newDate.getDate()).padStart(2, '0')
+    const formattedDate = `${year}-${month}-${day}`
+    setEditedEvent((prev) => ({ ...prev, [field]: formattedDate }))
+  }
+
+  // Парсинг даты и времени
+  const parseDateTime = useCallback((dateString: string, timeString: string): Date => {
+    try {
+      if (!dateString || !timeString) throw new Error('Date or time missing')
+      const [year, month, day] = dateString.split('-').map(Number)
+      const [hours, minutes] = timeString.split(':').map(Number)
+      const date = new Date(year, month - 1, day, hours, minutes)
+      if (isNaN(date.getTime())) throw new Error('Invalid date format')
+      return date
+    } catch (e) {
+      console.error('Error parsing date:', dateString, timeString, e)
+      return new Date(NaN)
     }
-  }
+  }, [])
 
-  const handleRemoveExistingImage = (urlToRemove: string) => {
-    setExistingMediaUrls((prev) => prev.filter((url) => url !== urlToRemove))
-  }
-
-  const handleRemoveNewImage = (previewToRemove: string) => {
-    setImagePreviews((prev) => prev.filter((preview) => preview !== previewToRemove))
-    setSelectedFiles((prev) => {
-      const index = imagePreviews.indexOf(previewToRemove)
-      if (index !== -1) {
-        const newFiles = [...prev]
-        newFiles.splice(index, 1)
-        return newFiles
-      }
-      return prev
-    })
-  }
-
+  // Обновление события
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+
     if (!token) {
-      console.log('No token found, redirecting to login...')
+      toast.error('You must be logged in to update an event.')
       router.push('/login')
+      setIsLoading(false)
       return
     }
 
     try {
-      const date = editedEvent.date ? new Date(editedEvent.date) : new Date()
-      if (isNaN(date.getTime())) throw new Error('Invalid date format')
-
-      const newMediaUrls: string[] = []
-
       // Загрузка новых файлов на Cloudinary
+      const newMediaUrls: string[] = []
       for (const file of selectedFiles) {
         const formData = new FormData()
         formData.append('file', file)
@@ -203,107 +240,125 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
           body: formData,
         })
 
-        if (!response.ok) {
-          const errorData = await response.json()
-          console.error('Error uploading file:', errorData)
-          throw new Error('Failed to upload file')
-        }
-
+        if (!response.ok) throw new Error('Failed to upload file')
         const data = await response.json()
         newMediaUrls.push(data.url)
       }
 
-      // Объединяем существующие (не удаленные) и новые URL
+      // Объединяем существующие и новые URL
       const allMediaUrls = [...existingMediaUrls, ...newMediaUrls]
-      // Обновляем date
-      const newEventDate = new Date(editedEvent.date)
+
+      // Формируем дату
+      const selectedDate = new Date(editedEvent.date)
       const [hours, minutes] = editedEvent.time.split(':').map(Number)
-      newEventDate.setHours(hours || 0, minutes || 0)
+      selectedDate.setHours(hours || 0, minutes || 0)
+      if (isNaN(selectedDate.getTime())) throw new Error('Invalid date format')
+
+      const eventData = {
+        title: editedEvent.title,
+        content: editedEvent.content,
+        user: ID,
+        date: selectedDate.toISOString(),
+        mediaUrls: allMediaUrls.length > 0 ? allMediaUrls : undefined,
+        location: location
+          ? { coordinates: location.coordinates, address: location.address }
+          : undefined,
+      }
+
+      console.log('<==== eventData ====>', eventData)
+
       const response = await fetch(`/api/events/${event}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `JWT ${token}`,
         },
-        body: JSON.stringify({
-          ...editedEvent,
-          date: newEventDate,
-          user: currentUserId,
-          mediaUrls: allMediaUrls.map((url) => ({ url })),
-          location: location
-            ? {
-                coordinates: {
-                  type: 'Point',
-                  coordinates: location.coordinates,
-                },
-                address: location.address,
-              }
-            : undefined,
-        }),
+        body: JSON.stringify(eventData),
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('Error response:', errorData)
-        throw new Error(`Failed to update event: ${errorData.message || response.statusText}`)
+        throw new Error(errorData.message || 'Failed to update event')
       }
 
-      const updatedEvent = await response.json()
-      console.log('<====Event Updated====>', updatedEvent.doc)
-      toast.success('Event Updated Successfully.')
+      const responseData = await response.json()
+      console.log('<==== responseData ====>', responseData)
+
+      const updatedEvent = responseData.doc || responseData
+      console.log('<==== updatedEvent.mediaUrls ====>', updatedEvent.mediaUrls)
+
+      const normalizedEvent: Event = {
+        id: String(updatedEvent.id || updatedEvent._id || event),
+        title: updatedEvent.title || eventData.title,
+        content: updatedEvent.content || eventData.content,
+        date: updatedEvent.date || eventData.date,
+        mediaUrls: updatedEvent.mediaUrls || eventData.mediaUrls || [],
+        location: updatedEvent.location || eventData.location,
+        user: {
+          id: String(updatedEvent.user?.id || currentUser?.id),
+          email: updatedEvent.user?.email || currentUser?.email,
+        },
+      }
+
       setFlagEvents((prev) => !prev)
+      toast.success('Event updated successfully')
       setShowEditModal(false)
-      setIsLoading(false)
+      setSelectedFiles([])
+      setImagePreviews([])
+      setLocation(null)
+      setEditedEvent({
+        title: '',
+        content: '',
+        date: '',
+        time: '00:00',
+        endDate: '',
+        endTime: '',
+      })
     } catch (err: any) {
-      console.error('Error in handleUpdateEvent:', err.message)
-      toast.error(err.message || 'Error fetching event')
+      console.error('Error updating event:', err)
+      toast.error(err.message || 'Failed to update event')
     } finally {
-      setTimeout(() => {
-        setIsLoading(false)
-      }, 1500)
+      setIsLoading(false)
+      setTimeout(() => toast.dismiss(), 1500)
     }
   }
 
   return (
     <AnimatePresence>
+      {showLocationManager && (
+        <LocationManager
+          token={token}
+          userId={ID || null}
+          onClose={() => setShowLocationManager(false)}
+        />
+      )}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4"
       >
-        {isLoading && <Loading />}
-        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+        <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Image
+          onClick={() => setShowEditModal(false)}
+          src="/assets/svg/cross.svg"
+          alt="cross"
+          width={24}
+          height={24}
+          className="absolute top-4 right-4 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
+        />
         <motion.div
           initial={{ scale: 0, y: 0 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
-          className="w-full max-w-2xl"
+          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white border border-gray-300 rounded-lg p-4"
         >
-          {showLocationManager && (
-            <LocationManager
-              token={token}
-              userId={ID || null}
-              onClose={() => setShowLocationManager(false)}
-            />
-          )}
           <form
             onSubmit={handleUpdateEvent}
             className="w-full relative mb-8 bg-white border border-gray-300 rounded-lg p-4"
           >
-            <Image
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowEditModal(false)
-              }}
-              src="/assets/svg/cross.svg"
-              alt="cross"
-              width={100}
-              height={100}
-              className="absolute top-4 right-4 cursor-pointer z-50 w-6 h-6 border border-gray-300 rounded-full p-1 hover:bg-gray-200 shadow-inner shadow-md transition-all duration-200 ease-in-out"
-            />
-            {error && <ModalMessage message={error} open={showModal} />}
             <h2 className="text-xl font-semibold mb-4">Edit Event</h2>
+            {/* Title */}
             <div className="mb-4">
               <Input
                 typeInput="text"
@@ -315,48 +370,77 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 required
               />
             </div>
+            {/* Content */}
             <div className="mb-4">
               <Input
                 typeInput="text"
-                id="Content"
+                id="content"
                 data="Content"
-                name="Content"
+                name="content"
                 value={editedEvent.content}
                 onChange={(e) => setEditedEvent({ ...editedEvent, content: e.target.value })}
                 required
               />
             </div>
+            {/* ===========Start Date============ */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Date</label>
-              <input
-                type="date"
-                value={editedEvent.date}
-                onChange={(e) => setEditedEvent({ ...editedEvent, date: e.target.value })}
-                required
-                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <label className="block text-sm font-medium text-gray-700">
+                Date:{' '}
+                {editedEvent.date
+                  ? new Date(editedEvent.date).toLocaleDateString('de-DE')
+                  : 'Not Selected'}
+              </label>
+              <Calendar
+                selectedDate={new Date(editedEvent.date)}
+                handleDateChange={(date) => handleDateChange(date, 'date')}
               />
             </div>
+            {/*=============== Start Time =============*/}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Time</label>
-              <input
-                type="time"
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Time: {editedEvent.time}
+              </label>
+              <ClockUhr
                 value={editedEvent.time}
                 onChange={(e) => setEditedEvent({ ...editedEvent, time: e.target.value })}
-                required
-                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+            {/* End Date and Time */}
+            {/* <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                End Date (Optional):
+                {editedEvent.endDate
+                  ? new Date(editedEvent.endDate).toLocaleDateString('de-DE', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                    })
+                  : 'Not Selected'}
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                End Time (Optional): {editedEvent.endTime || 'Not Selected'}
+              </label>
+              <br className="my-1" />
+              <Calendar
+                selectedDate={editedEvent.endDate ? new Date(editedEvent.endDate) : undefined}
+                handleDateChange={(date) => handleDateChange(date, 'endDate')}
+              />
+              <br className="my-1" />
+              <ClockUhr
+                value={editedEvent.endTime}
+                onChange={(e) => setEditedEvent({ ...editedEvent, endTime: e.target.value })}
+              />
+            </div> */}
+            {/* Media */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Add More Media</label>
+              <label className="block text-sm font-medium text-gray-700">Add Media</label>
               <input
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               />
             </div>
-
-            {/* Media */}
             {existingMediaUrls.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Existing Media</h3>
@@ -386,11 +470,11 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
             {imagePreviews.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">New Media</h3>
-                <div className="flex-nowrap gap-4 flex">
+                <div className="flex flex-wrap gap-4">
                   {imagePreviews.map((preview, index) => (
                     <div
                       key={`new-${index}`}
-                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden flex items-center justify-center"
+                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md"
                     >
                       <img
                         src={preview}
@@ -409,9 +493,8 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 </div>
               </div>
             )}
-
             {/* Location */}
-            <div className="mb-4 h-64 w-full">
+            <div className="mb-4">
               <div className="flex gap-2 mb-2">
                 <button
                   type="button"
@@ -422,22 +505,15 @@ const EditEventModal: React.FC<EditEventModalProps> = ({ event, setShowEditModal
                 </button>
               </div>
               {renderLocations}
-              <EventMap
-                interactive
-                onLocationSelect={(coords) => {
-                  setLocation({
-                    coordinates: coords,
-                    address: '',
-                  })
-                }}
-                selectedLocation={location?.coordinates}
-                initialPosition={
-                  !location?.coordinates ? editedEvent.location?.coordinates : undefined
-                }
-              />
-              {location && (
-                <div className="mt-2 text-sm">Selected: {location.coordinates.join(', ')}</div>
-              )}
+              <div className="h-64 w-full">
+                <EventMap
+                  interactive
+                  onLocationSelect={(coords) => {
+                    setLocation({ coordinates: coords, address: location?.address || '' })
+                  }}
+                  selectedLocation={location?.coordinates}
+                />
+              </div>
             </div>
             <Button buttonText="Update Event" buttonType="submit" />
           </form>

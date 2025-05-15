@@ -61,12 +61,6 @@ export default function EventMap({
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
-    if (initialPosition) {
-      console.log('<==== initialPosition====>', initialPosition)
-    }
-  }, [initialPosition])
-
-  useEffect(() => {
     setIsClient(true)
     if (typeof window !== 'undefined') {
       delete (L.Icon.Default.prototype as any)._getIconUrl

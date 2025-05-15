@@ -27,7 +27,7 @@ interface Event {
   title: string
   content: string
   date: string
-  mediaUrls?: { url: string }[]
+  mediaUrls?: string[]
   location?: { coordinates: [number, number]; address?: string }
   user?: { id: string; email?: string }
 }
@@ -103,169 +103,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     },
     [],
   )
-  // -----------------------------
-  const parseDateTime = useCallback((dateString: string, timeString: string): Date => {
-    try {
-      if (!dateString || !timeString) throw new Error('Date or time missing')
-      const [year, month, day] = dateString.split('-').map(Number)
-      const [hours, minutes] = timeString.split(':').map(Number)
-      const date = new Date(year, month - 1, day, hours, minutes)
-      if (isNaN(date.getTime())) throw new Error('Invalid date format')
-      return date
-    } catch (e) {
-      console.error('Error parsing date:', dateString, timeString, e)
-      return new Date(NaN)
-    }
-  }, [])
-
-  const handleCreateEvent = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    if (!token) {
-      toast.error('You must be logged in to create an event.')
-      router.push('/login')
-      setIsLoading(false)
-      return
-    }
-
-    try {
-      const mediaUrls: string[] = []
-      for (const file of selectedFiles) {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('upload_preset', process.env.CLOUDINARY_UPLOAD_PRESET!)
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) throw new Error('Failed to upload file')
-        const data = await response.json()
-        mediaUrls.push(data.url)
-      }
-
-      const selectedDate = new Date(selectedDay)
-      const [hours, minutes] = newEvent.time.split(':').map(Number)
-      selectedDate.setHours(hours || 0, minutes || 0)
-      if (isNaN(selectedDate.getTime())) throw new Error('Invalid start date format')
-
-      const eventBase = {
-        title: newEvent.title,
-        content: newEvent.content,
-        user: ID,
-        mediaUrls: mediaUrls.map((url) => ({ url })),
-        location: location
-          ? { coordinates: location.coordinates, address: location.address }
-          : undefined,
-      }
-
-      const createdEvents: Event[] = []
-      if (newEvent.endDate) {
-        const endDate = parseDateTime(newEvent.endDate, newEvent.endTime)
-
-        if (isNaN(endDate.getTime())) throw new Error('Invalid end date format')
-        if (endDate < selectedDate) throw new Error('End date must be after start date')
-
-        const dayOfWeek = selectedDate.getDay()
-        const currentDate = new Date(selectedDate)
-
-        while (currentDate <= endDate) {
-          if (currentDate.getDay() === dayOfWeek) {
-            const eventData = {
-              ...eventBase,
-              date: currentDate,
-            }
-
-            const response = await fetch('/api/events', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `JWT ${token}`,
-              },
-              body: JSON.stringify(eventData),
-            })
-
-            if (!response.ok) {
-              const errorData = await response.json()
-              throw new Error(errorData.message || 'Failed to create event')
-            }
-
-            const responseData = await response.json()
-            const createdEvent = responseData.doc || responseData
-
-            const normalizedEvent: Event = {
-              id: String(createdEvent.id || createdEvent._id || `temp-${Date.now()}`),
-              title: createdEvent.title || eventData.title,
-              content: createdEvent.content || eventData.content,
-              date: createdEvent.date || eventData.date,
-              mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
-              location: createdEvent.location || eventData.location,
-              user: {
-                id: String(createdEvent.user?.id || currentUser?.id),
-                email: createdEvent.user?.email || currentUser?.email,
-              },
-            }
-
-            createdEvents.push(normalizedEvent)
-          }
-          currentDate.setDate(currentDate.getDate() + 1)
-        }
-      } else {
-        const eventData = {
-          ...eventBase,
-          date: selectedDate,
-        }
-        console.log('<====eventData====>', eventData)
-        const response = await fetch('/api/events', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `JWT ${token}`,
-          },
-          body: JSON.stringify(eventData),
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.message || 'Failed to create event')
-        }
-
-        const responseData = await response.json()
-        const createdEvent = responseData.doc || responseData
-
-        const normalizedEvent: Event = {
-          id: String(createdEvent.id || createdEvent._id || `temp-${Date.now()}`),
-          title: createdEvent.title || eventData.title,
-          content: createdEvent.content || eventData.content,
-          date: createdEvent.date || eventData.date,
-          mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
-          location: createdEvent.location || eventData.location,
-          user: {
-            id: String(createdEvent.user?.id || currentUser?.id),
-            email: createdEvent.user?.email || currentUser?.email,
-          },
-        }
-
-        createdEvents.push(normalizedEvent)
-      }
-
-      // setEvents((prev) => [...prev, ...createdEvents])
-      setFlagEvents((prev) => !prev)
-      toast.success(`Event${createdEvents.length > 1 ? 's' : ''} created successfully`)
-      setShowCreateModal(false)
-      setSelectedFiles([])
-      setImagePreviews([])
-      setLocation(null)
-    } catch (err: any) {
-      console.error('Error creating event:', err)
-      toast.error(err.message || 'Failed to create event')
-    } finally {
-      setIsLoading(false)
-      setTimeout(() => toast.dismiss(), 1500)
-    }
-  }
 
   const handleDeleteLocation = async (id: string) => {
     try {
@@ -339,7 +176,178 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     setNewEvent((prev) => ({ ...prev, endDate: formattedDate }))
   }
   // ---------------------
+  // -----------------------------
+  const parseDateTime = useCallback((dateString: string, timeString: string): Date => {
+    try {
+      if (!dateString || !timeString) throw new Error('Date or time missing')
+      const [year, month, day] = dateString.split('-').map(Number)
+      const [hours, minutes] = timeString.split(':').map(Number)
+      const date = new Date(year, month - 1, day, hours, minutes)
+      if (isNaN(date.getTime())) throw new Error('Invalid date format')
+      return date
+    } catch (e) {
+      console.error('Error parsing date:', dateString, timeString, e)
+      return new Date(NaN)
+    }
+  }, [])
 
+  const handleCreateEvent = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    if (!token) {
+      toast.error('You must be logged in to create an event.')
+      router.push('/login')
+      setIsLoading(false)
+      return
+    }
+
+    try {
+      const mediaUrls: string[] = []
+      for (const file of selectedFiles) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('upload_preset', process.env.CLOUDINARY_UPLOAD_PRESET!)
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) throw new Error('Failed to upload file')
+        const data = await response.json()
+        mediaUrls.push(data.url)
+      }
+
+      const selectedDate = new Date(selectedDay)
+      const [hours, minutes] = newEvent.time.split(':').map(Number)
+      selectedDate.setHours(hours || 0, minutes || 0)
+      if (isNaN(selectedDate.getTime())) throw new Error('Invalid start date format')
+
+      const eventBase = {
+        title: newEvent.title,
+        content: newEvent.content,
+        user: ID,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
+        location: location
+          ? { coordinates: location.coordinates, address: location.address }
+          : undefined,
+      }
+
+      const createdEvents: Event[] = []
+      if (newEvent.endDate && newEvent.endTime) {
+        const endDate = parseDateTime(newEvent.endDate, newEvent.endTime)
+        if (isNaN(endDate.getTime())) throw new Error('Invalid end date format')
+        if (endDate < selectedDate) throw new Error('End date must be after start date')
+
+        const dayOfWeek = selectedDate.getDay()
+        const currentDate = new Date(selectedDate)
+
+        while (currentDate <= endDate) {
+          if (currentDate.getDay() === dayOfWeek) {
+            const eventData = {
+              ...eventBase,
+              date: currentDate.toISOString(),
+            }
+            console.log('<==== eventData ====>', eventData)
+
+            const response = await fetch('/api/events', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `JWT ${token}`,
+              },
+              body: JSON.stringify(eventData),
+            })
+
+            if (!response.ok) {
+              const errorData = await response.json()
+              throw new Error(errorData.message || 'Failed to create event')
+            }
+
+            const responseData = await response.json()
+            console.log('<==== responseData ====>', responseData)
+
+            const createdEvent = responseData.doc || responseData
+            console.log('<==== createdEvent.mediaUrls ====>', createdEvent.mediaUrls)
+
+            const normalizedEvent: Event = {
+              id: String(createdEvent.id || createdEvent._id || `temp-${Date.now()}`),
+              title: createdEvent.title || eventData.title,
+              content: createdEvent.content || eventData.content,
+              date: createdEvent.date || eventData.date,
+              mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
+              location: createdEvent.location || eventData.location,
+              user: {
+                id: String(createdEvent.user?.id || currentUser?.id),
+                email: createdEvent.user?.email || currentUser?.email,
+              },
+            }
+
+            createdEvents.push(normalizedEvent)
+          }
+          currentDate.setDate(currentDate.getDate() + 1)
+        }
+      } else {
+        const eventData = {
+          ...eventBase,
+          date: selectedDate.toISOString(),
+        }
+        console.log('<====mediaUrls====>', mediaUrls)
+        console.log('<==== eventData ====>', eventData)
+
+        const response = await fetch('/api/events', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `JWT ${token}`,
+          },
+          body: JSON.stringify(eventData),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || 'Failed to create event')
+        }
+
+        const responseData = await response.json()
+        console.log('<==== responseData ====>', responseData)
+
+        const createdEvent = responseData.doc || responseData
+        console.log('<==== createdEvent.mediaUrls ====>', createdEvent.mediaUrls)
+
+        const normalizedEvent: Event = {
+          id: String(createdEvent.id || createdEvent._id || `temp-${Date.now()}`),
+          title: createdEvent.title || eventData.title,
+          content: createdEvent.content || eventData.content,
+          date: createdEvent.date || eventData.date,
+          mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
+          location: createdEvent.location || eventData.location,
+          user: {
+            id: String(createdEvent.user?.id || currentUser?.id),
+            email: createdEvent.user?.email || currentUser?.email,
+          },
+        }
+
+        createdEvents.push(normalizedEvent)
+      }
+
+      setFlagEvents((prev) => !prev)
+      toast.success(`Event${createdEvents.length > 1 ? 's' : ''} created successfully`)
+      setShowCreateModal(false)
+      setSelectedFiles([])
+      setImagePreviews([])
+      setLocation(null)
+      setNewEvent({ title: '', content: '', date: '', time: '00:00', endDate: '', endTime: '' })
+    } catch (err: any) {
+      console.error('Error creating event:', err)
+      toast.error(err.message || 'Failed to create event')
+    } finally {
+      setIsLoading(false)
+      setTimeout(() => toast.dismiss(), 1500)
+    }
+  }
+  // -----------------------------
   return (
     <AnimatePresence>
       {showLocationManager && (

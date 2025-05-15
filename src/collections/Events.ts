@@ -4,6 +4,7 @@ export const Events: CollectionConfig = {
   slug: 'events',
   admin: {
     useAsTitle: 'content',
+    defaultColumns: ['title', 'content', 'date', 'mediaUrls'],
   },
   access: {
     read: ({ req: { user } }) => {
@@ -31,6 +32,20 @@ export const Events: CollectionConfig = {
         },
       }
     },
+  },
+  hooks: {
+    beforeChange: [
+      ({ data }) => {
+        console.log('<==== Payload beforeChange: mediaUrls ====>', data.mediaUrls)
+        return data
+      },
+    ],
+    afterChange: [
+      ({ doc }) => {
+        console.log('<==== Payload afterChange: mediaUrls ====>', doc.mediaUrls)
+        return doc
+      },
+    ],
   },
   fields: [
     {
@@ -63,19 +78,14 @@ export const Events: CollectionConfig = {
       type: 'text',
       required: true,
     },
-
     {
       name: 'mediaUrls',
-      type: 'array',
+      type: 'json', // Хранит массив строк как JSONB
       required: false,
       label: 'Event Media URLs',
-      fields: [
-        {
-          name: 'url',
-          type: 'text',
-          label: 'Media URL',
-        },
-      ],
+      admin: {
+        description: 'Array of media URLs (e.g., ["url1", "url2"])',
+      },
     },
     {
       name: 'location',

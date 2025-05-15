@@ -28,15 +28,15 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await fetch('/api/logout', { method: 'POST' })
+      setEvents([])
+      setToken('')
+      setUser('')
+      localStorage.removeItem('token')
+      setIsAuthenticated(false)
+      router.push('/')
     } catch (err) {
       console.error('Error logging out:', err)
     }
-    setEvents([])
-    setToken('')
-    setUser('')
-    localStorage.removeItem('token')
-    setIsAuthenticated(false)
-    router.push('/')
   }
 
   return (
@@ -62,7 +62,7 @@ export default function Navbar() {
               Events
             </Link>
           )}
-          {role === 'admin' && (
+          {isAuthenticated && role === 'admin' && (
             <Link
               href="/admin"
               className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/admin' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}

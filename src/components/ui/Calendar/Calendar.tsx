@@ -34,6 +34,14 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, handleDateChange }) =
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
 
+  // ------------------------
+
+  useEffect(() => {
+    if (selectedDate) {
+      console.log('<==== selectedDate====>', selectedDate)
+    }
+  }, [selectedDate])
+
   useEffect(() => {
     const dateToUse = selectedDate ?? new Date()
     if (
@@ -45,7 +53,7 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, handleDateChange }) =
       setSelectedDay(null) // Сброс, если месяц другой
     }
   }, [selectedDate, currentDate])
-
+  // ------------------------
   const validateAndSetDate = (date: Date) => {
     const now = new Date().toLocaleString('de-DE', {
       timeZone: 'Europe/Berlin',

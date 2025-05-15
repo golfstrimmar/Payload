@@ -59,11 +59,7 @@ const EventCard: React.FC<EventCardProps> = () => {
       router.push('/events')
     }
   }, [length])
-  useEffect(() => {
-    if (events) {
-      console.log('<==== events on eventpage====>', events)
-    }
-  }, [events])
+
   useEffect(() => {
     if (id && events) {
       const foundEvent = events?.find((e) => String(e.id) === String(id))
@@ -77,16 +73,11 @@ const EventCard: React.FC<EventCardProps> = () => {
   }, [events])
 
   useEffect(() => {
-    if (id) {
-      console.log('<==== id====>', id)
-    }
-  }, [id])
-  useEffect(() => {
     if (event) {
-      console.log('<==== event on eventpage====>', event)
+      console.log('<==== event====>', event)
     }
   }, [event])
-
+  // ---------------
   const handleDeleteEvent = async (id: string) => {
     setIsLoading(true)
 

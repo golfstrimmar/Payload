@@ -52,6 +52,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
         })
         if (eventsResponse.ok) {
           const { docs } = await eventsResponse.json()
+          console.log('<====docs====>', docs)
           const normalizedEvents: Event[] = docs.map((event: any) => {
             const date = new Date(event.date)
             const formattedDate = date
@@ -74,11 +75,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
               time: formattedDate.split(' ')[1],
               user: event.user ? { id: String(event.user.id), email: event.user.email } : undefined,
               location: event.location || { coordinates: [0, 0], address: '' },
-              mediaUrls: event.media
-                ? Array.isArray(event.media)
-                  ? event.media.map((m: any) => m.mediaFile?.url || '')
-                  : [event.media.url || '']
-                : [],
+              mediaUrls: event.mediaUrls || [],
             }
           })
           setEvents(normalizedEvents)
