@@ -2,21 +2,16 @@
 
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react'
 import { useUserContext } from '@/components/UserContext'
+
 export interface Event {
   id: string
   title: string
-  description: string
+  content: string // Исправлено с description на content
   date: string
   time: string
   location: { coordinates: [number, number]; address?: string }
   mediaUrls: string[]
-}
-
-interface Location {
-  id: string
-  name: string
-  user: { id: string }
-  coordinates: { latitude: number; longitude: number }[]
+  user?: { id: string; email?: string } // Добавлено
 }
 
 interface StateContextType {
@@ -32,31 +27,32 @@ interface StateContextType {
 const StateContext = createContext<StateContextType | undefined>(undefined)
 
 export function StateProvider({ children }: { children: ReactNode }) {
+  const { token } = useUserContext()
   const [flagEvents, setFlagEvents] = useState<boolean>(false)
   const [length, setLength] = useState<number>(0)
   const [events, setEvents] = useState<Event[]>([])
-  const { token } = useUserContext() // token
   const [isLoading, setIsLoading] = useState<boolean>(false)
-  // ------------------------------
 
   useEffect(() => {
     const fetchEvents = async () => {
       if (!token) {
         setEvents([])
+        setLength(0)
         return
       }
+      setIsLoading(true)
       try {
-        const response = await fetch('/api/events', {
+        // Получаем события
+        const eventsResponse = await fetch('/api/events?depth=1', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `JWT ${token}`,
           },
         })
-        if (response.ok) {
-          const { docs } = await response.json()
+        if (eventsResponse.ok) {
+          const { docs } = await eventsResponse.json()
           const normalizedEvents: Event[] = docs.map((event: any) => {
-            // Преобразуем дату из UTC в локальное время Europe/Berlin
             const date = new Date(event.date)
             const formattedDate = date
               .toLocaleString('sv-SE', {
@@ -69,34 +65,39 @@ export function StateProvider({ children }: { children: ReactNode }) {
                 second: '2-digit',
                 hour12: false,
               })
-              .replace(' ', ' ') // "2025-05-13 00:30:00"
-
+              .replace(' ', ' ')
             return {
               id: String(event.id),
               title: event.title,
               content: event.content || '',
-              date: formattedDate.split(' ')[0], // "2025-05-13"
-              time: formattedDate.split(' ')[1], // "00:30:00"
-              user: { id: String(event.user.id), email: event.user.email },
-              location:
-                { coordinates: event.location.coordinates, address: event.location.address } || '',
-              mediaUrls: event.mediaUrls?.map((media: any) => media.url) || [],
+              date: formattedDate.split(' ')[0],
+              time: formattedDate.split(' ')[1],
+              user: event.user ? { id: String(event.user.id), email: event.user.email } : undefined,
+              location: event.location || { coordinates: [0, 0], address: '' },
+              mediaUrls: event.media
+                ? Array.isArray(event.media)
+                  ? event.media.map((m: any) => m.mediaFile?.url || '')
+                  : [event.media.url || '']
+                : [],
             }
           })
           setEvents(normalizedEvents)
+          setLength(normalizedEvents.length)
         } else {
-          console.error('Failed to fetch events:', response.status, response.statusText)
+          console.error('Failed to fetch events:', eventsResponse.status)
           setEvents([])
         }
       } catch (err) {
-        console.error('Error fetching events:', err)
+        console.error('Error fetching events or count:', err)
         setEvents([])
+        setLength(0)
+      } finally {
+        setIsLoading(false)
       }
     }
     fetchEvents()
   }, [token, flagEvents])
 
-  // ------------------------------
   const contextValue = useMemo(
     () => ({
       isLoading,
@@ -105,10 +106,9 @@ export function StateProvider({ children }: { children: ReactNode }) {
       setLength,
       events,
       setEvents,
-      flagEvents,
       setFlagEvents,
     }),
-    [isLoading, length, events, flagEvents, setFlagEvents],
+    [isLoading, length, events, flagEvents],
   )
 
   return <StateContext.Provider value={contextValue}>{children}</StateContext.Provider>

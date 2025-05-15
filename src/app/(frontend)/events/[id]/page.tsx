@@ -50,8 +50,15 @@ const EventCard: React.FC<EventCardProps> = () => {
   const [showEditModal, setShowEditModal] = useState<boolean>(false)
   const [editingEvent, setEditingEvent] = useState<Event | null>(null)
   const router = useRouter()
-  const { setIsLoading, events, setEvents } = useStateContext()
+  const { setIsLoading, events, setEvents, length } = useStateContext()
   const { token } = useUserContext()
+  // ---------------
+  useEffect(() => {
+    if (length === 0) {
+      console.log('<==== length====>', length)
+      router.push('/events')
+    }
+  }, [length])
   useEffect(() => {
     if (events) {
       console.log('<==== events on eventpage====>', events)

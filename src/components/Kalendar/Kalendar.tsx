@@ -38,7 +38,7 @@ interface Event {
 
 const Kalendar: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false)
-  const { events, setEvents, setFlagEvents } = useStateContext()
+  const { events, setEvents, setFlagEvents, isLoading, length } = useStateContext()
   const { user } = useUserContext()
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth())
@@ -49,7 +49,7 @@ const Kalendar: React.FC = () => {
 
   useEffect(() => {
     if (events) {
-      console.log('<==== events kalendar====>', events)
+      console.log('<==== events kalendar, length====>', events, length)
     }
   }, [events])
   // -------------------------
