@@ -12,7 +12,7 @@ export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
   const { user, setUser, setToken, role } = useUserContext()
-  const { setEvents } = useStateContext()
+  const { setEvents, length } = useStateContext()
   const pathname = usePathname()
   const [activeLink, setactiveLink] = useState<string>('')
   useEffect(() => {
@@ -55,12 +55,15 @@ export default function Navbar() {
           </Link>
 
           {isAuthenticated && (
-            <Link
-              href="/events"
-              className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/events' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}
-            >
-              Events
-            </Link>
+            <>
+              <Link
+                href="/events"
+                className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/events' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}
+              >
+                Events
+              </Link>
+              <span className="text-[13px]">({length})</span>
+            </>
           )}
           {isAuthenticated && role === 'admin' && (
             <Link

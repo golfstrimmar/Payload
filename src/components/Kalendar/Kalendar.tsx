@@ -139,7 +139,14 @@ const Kalendar: React.FC = () => {
           isUpcoming,
         }
       })
-      if (newFilteredEvents.length > 0) return newFilteredEvents
+      if (newFilteredEvents.length > 0) {
+        return newFilteredEvents.sort((a, b) => {
+          const dateA = new Date(`1970-01-01T${a.time}Z`)
+          const dateB = new Date(`1970-01-01T${b.time}Z`)
+          return dateA.getTime() - dateB.getTime()
+        })
+      }
+      return newFilteredEvents
     },
     [selectedMonth, eventsMap, parseEventDate],
   )

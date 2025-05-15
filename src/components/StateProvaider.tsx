@@ -43,7 +43,7 @@ export function StateProvider({ children }: { children: ReactNode }) {
       setIsLoading(true)
       try {
         // Получаем события
-        const eventsResponse = await fetch('/api/events?depth=1', {
+        const eventsResponse = await fetch('/api/events?depth=1&limit=100000', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
