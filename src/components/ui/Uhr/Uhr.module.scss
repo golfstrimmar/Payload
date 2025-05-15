@@ -10,12 +10,35 @@
   min-width: 180px;
   padding: 3px 25px;
   position: fixed;
-  top: 2px;
+  top: 40px;
   z-index: 2000;
+  transition: all .2s ease-in-out;
 
   &-item {
     font-size: 25px;
     font-weight: bold;
     color: $blue6;
+  }
+
+
+}
+
+.scrolled {
+  top: 0px;
+}
+
+@media (min-width: 768px)and (max-width: 1024px) {
+  .uhr {
+    top: 30px;
+  }
+}
+
+@media screen and (max-width: 767px) {
+  .uhr {
+    top: 30px;
+  }
+
+  .scrolled {
+    top: 0px;
   }
 }

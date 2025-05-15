@@ -3,7 +3,7 @@
 import { EventsProvider } from '@/components/EventsContext'
 import { LocationsProvider } from '@/components/LocationsContext'
 import { useUserContext } from '@/components/UserContext'
-import Navbar from '@/components/Navbar'
+import Navbar from '@/components/Navbar/Navbar'
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
   const { token } = useUserContext()

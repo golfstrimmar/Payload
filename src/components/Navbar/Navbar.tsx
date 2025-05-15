@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-
+import './Navbar.scss'
 import { useUserContext } from '@/components/UserContext'
 import { useStateContext } from '@/components/StateProvaider'
 import { useRouter, usePathname } from 'next/navigation'
 import Uhr from '@/components/ui/Uhr/Uhr'
-
+import Burger from '@/components/ui/Burger/Burger'
 export default function Navbar() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
@@ -15,6 +15,10 @@ export default function Navbar() {
   const { setEvents, length } = useStateContext()
   const pathname = usePathname()
   const [activeLink, setactiveLink] = useState<string>('')
+  const [isOpen, setisOpen] = useState<boolean>(false)
+
+  // ----------------------------
+
   useEffect(() => {
     setactiveLink(pathname)
   }, [pathname])
@@ -39,14 +43,18 @@ export default function Navbar() {
     }
   }
 
+  const handlerburgerClick = () => {
+    setisOpen(!isOpen)
+  }
+
   return (
-    <nav className="bg-blue-600 p-6">
-      <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <div className="text-white text-lg font-bold">
-          <Link href="/">My App</Link>
-        </div>
+    <nav className="bg-blue-600 header">
+      <div className="w-full  ">
         <Uhr />
-        <div className="flex space-x-4 items-center">
+        <Burger handlerburgerClick={handlerburgerClick} isOpen={isOpen} />
+        <div
+          className={`flex px-4 space-x-4  justify-between items-center menu ${isOpen ? 'run' : ''}`}
+        >
           <Link
             href="/"
             className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}
@@ -55,7 +63,7 @@ export default function Navbar() {
           </Link>
 
           {isAuthenticated && (
-            <>
+            <div className="flex space-x-2">
               <Link
                 href="/events"
                 className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/events' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}
@@ -63,7 +71,7 @@ export default function Navbar() {
                 Events
               </Link>
               <span className="text-[13px]">({length})</span>
-            </>
+            </div>
           )}
           {isAuthenticated && role === 'admin' && (
             <Link
@@ -73,14 +81,7 @@ export default function Navbar() {
               Admin
             </Link>
           )}
-          {isAuthenticated && (
-            <div className=" grid grid-cols-[.5fr_2fr]">
-              <span>user:</span>
-              <h2 className="text-blue-200 font-bold lh-1">{user}</h2>
-              <span>role:</span>
-              <p className="text-blue-200 font-bold lh-1">{role}</p>
-            </div>
-          )}
+
           {isAuthenticated ? (
             <button
               onClick={handleLogout}
@@ -95,6 +96,14 @@ export default function Navbar() {
             >
               Login
             </Link>
+          )}
+          {isAuthenticated && (
+            <div className=" grid grid-cols-[.5fr_2fr] person">
+              <span>user:</span>
+              <h2 className="text-blue-200 font-bold lh-1">{user}</h2>
+              <span>role:</span>
+              <p className="text-blue-200 font-bold lh-1">{role}</p>
+            </div>
           )}
         </div>
       </div>

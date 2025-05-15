@@ -3,13 +3,13 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { useStateContext } from '@/components/StateProvaider'
 import { useUserContext } from '@/components/UserContext'
-
 import { AnimatePresence } from 'framer-motion'
 import AddEventModal from '@/components/AddEventModal/AddEventModal'
 import './Kalendar.scss'
 import './KalendarDeep.scss'
 import Link from 'next/link'
 import DeleteEventsModal from '@/components/DeleteEventsModal/DeleteEventsModal'
+
 const GERMAN_MONTHS = [
   'Januar',
   'Februar',
@@ -30,6 +30,7 @@ interface Event {
   title: string
   content: string
   date: string
+  time?: string
   status: 'active' | 'inactive'
   mediaUrls?: { url: string }[]
   location?: { coordinates: [number, number]; address?: string }
@@ -45,15 +46,12 @@ const Kalendar: React.FC = () => {
   const [selectedDay, setselectedDay] = useState<string>('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  // -------------------------
-
   useEffect(() => {
     if (events) {
       console.log('<==== events kalendar, length====>', events, length)
     }
   }, [events])
-  // -------------------------
-  // -------------------------
+
   const eventsMap = useMemo(() => {
     const map = new Map()
 
@@ -87,18 +85,7 @@ const Kalendar: React.FC = () => {
 
     return map
   }, [events])
-  // -----------------------------------
-  // -----------------------------------
 
-  // -----------------------------------
-  // -----------------------------------
-  // console.log('<====eventsMap====>', eventsMap)
-  // for (const [key, value] of eventsMap) {
-  //   console.log('eventsMap item', key, value)
-  // }
-  // for (const key of eventsMap.keys()) {
-  //   console.log(key)
-  // }
   const parseEventDate = useCallback((dateString: string): Date => {
     try {
       const date = new Date(dateString)
@@ -116,14 +103,6 @@ const Kalendar: React.FC = () => {
 
       const utcDate = new Date(Date.UTC(2025, selectedMonth, day))
       const dateKey = utcDate.toISOString().slice(0, 10)
-      const now = new Date().toLocaleString('de-DE', {
-        timeZone: 'Europe/Berlin',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      })
-
       const filteredEvents = eventsMap.get(dateKey) || []
       const newFilteredEvents = filteredEvents.map((event) => {
         const eventDateTime = new Date(`${event.date}T${event.time}+02:00`)
@@ -157,14 +136,12 @@ const Kalendar: React.FC = () => {
     }, 60000)
 
     return () => clearInterval(interval)
-  }, [events, setEvents])
-  // -----------------------------------
-  // -----------------------------------
-  // -----------------------------------
+  }, [setFlagEvents])
+
   const getMonthDays = useCallback((monthIndex: number) => {
     const year = 2025
     const firstDay = new Date(year, monthIndex, 1)
-    const firstDayOffset = (firstDay.getDay() + 6) % 7
+    const firstDayOffset = (firstDay.getDay() + 6) % 7 // Понедельник = 0
     return {
       monthName: GERMAN_MONTHS[monthIndex],
       days: [
@@ -183,7 +160,15 @@ const Kalendar: React.FC = () => {
     const date = new Date(2025, selectedMonth, day)
     return date.toLocaleString('de-DE', { weekday: 'long' })
   }
-  // --------------renderDays----------------
+
+  const isWeekend = (date: Date | null) => {
+    if (!date) return { isWeekend: false, isSunday: false }
+    const dayOfWeek = date.getDay()
+    return {
+      isWeekend: dayOfWeek === 0 || dayOfWeek === 6, // Воскресенье (0) или Суббота (6)
+      isSunday: dayOfWeek === 0, // Только воскресенье
+    }
+  }
 
   const renderDays = useMemo(() => {
     if (selectedMonth === null) return null
@@ -191,11 +176,18 @@ const Kalendar: React.FC = () => {
 
     return days.map((day, index) => {
       const dayEvents = getEventsForDate(day)
+      const date = day ? new Date(2025, selectedMonth, day) : null
+      const { isWeekend: weekend, isSunday } = isWeekend(date)
 
       return (
         <div
           key={`${selectedMonth}-${index}`}
-          className={`day ${day ? 'active' : 'empty'}`}
+          className={`
+            day
+            ${day ? 'active' : 'empty'}
+            ${day && weekend ? 'weekend' : ''}
+            ${day && isSunday ? 'sunday' : ''}
+          `}
           style={{
             backgroundColor:
               new Date(2025, selectedMonth, day).toLocaleString('de-DE', {
@@ -208,7 +200,7 @@ const Kalendar: React.FC = () => {
                 month: 'long',
                 day: 'numeric',
               })
-                ? '#5e1bf9'
+                ? 'rgb(10, 228, 46)'
                 : '',
           }}
         >
@@ -232,32 +224,35 @@ const Kalendar: React.FC = () => {
               {dayEvents.map((event) => (
                 <div
                   key={event.id}
-                  className={`text-slate-800 shadow-[0_4px_9px_rgba(0,0,0,0.25)] rounded-sm hover:text-blue-700 transition duration-300 ease-in-out cursor-pointer ${
-                    event.status === 'active' && !event.isUpcoming
-                      ? 'bg-white'
-                      : event.status === 'active' && event.isUpcoming
-                        ? 'bg-red-700 text-white pulse'
-                        : 'bg-slate-400'
-                  }`}
+                  className={`
+                    text-slate-800
+                    shadow-[0_4px_9px_rgba(0,0,0,0.25)]
+                    rounded-sm
+                    hover:text-blue-700
+                    transition duration-300 ease-in-out
+                    cursor-pointer
+                    ${
+                      event.status === 'active' && !event.isUpcoming
+                        ? 'bg-white'
+                        : event.status === 'active' && event.isUpcoming
+                          ? 'bg-red-700 text-white pulse'
+                          : 'bg-slate-400'
+                    }
+                  `}
                 >
                   <Link href={`/events/${event.id}`} className="inline-block w-full px-1 py-1">
-                    <strong> {event.title}</strong>
+                    <strong>{event.title}</strong>
                     <br className="mb-1" />
-                    {event.time.split(':')[0] + ':' + event.time.split(':')[1]}
-                    {/* <br className="mb-1" />
-                    {event.status}
-                    <br className="mb-1" />
-                    {event.isUpcoming ? 'Upcoming' : 'normal'} */}
+                    {event.time?.split(':')[0] + ':' + event.time?.split(':')[1]}
                   </Link>
                 </div>
               ))}
             </div>
           )}
-          {/* ===================================== */}
         </div>
       )
     })
-  }, [selectedMonth, getMonthDays, getEventsForDate])
+  }, [selectedMonth, getMonthDays, getEventsForDate, isWeekend])
 
   return (
     <div className="kalendar-container">

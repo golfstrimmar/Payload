@@ -8,11 +8,15 @@
 
   .burger {
     display: block;
+    z-index: 2500;
+    position: relative;
+    padding: 5px 0 0 0;
 
     &-wrap {
       position: relative;
       display: flex;
       flex-direction: column;
+      margin: 0 auto;
       gap: 5px;
       cursor: pointer;
       width: 20px;
@@ -20,7 +24,7 @@
 
 
       &:hover * {
-        background-color:  $hover;
+        background-color: $hover;
       }
     }
 
@@ -33,20 +37,21 @@
       border-radius: 2px;
       transition: all .2s;
     }
-             &.run .burger-wrap {
-               .burger-top {
-                 width: 130%;
-                 transform: rotate(45deg) translate(4px, 7px);
-               }
-      
-               .burger-line {
-                 opacity: 0;
-               }
-      
-               .burger-bottom {
-                 width: 130%;
-                 transform: rotate(-45deg) translate(3px, -6px);
-               }
-             }
+
+    &.run .burger-wrap {
+      .burger-top {
+        width: 130%;
+        transform: rotate(45deg) translate(4px, 7px);
+      }
+
+      .burger-line {
+        opacity: 0;
+      }
+
+      .burger-bottom {
+        width: 130%;
+        transform: rotate(-45deg) translate(3px, -6px);
+      }
+    }
   }
 }

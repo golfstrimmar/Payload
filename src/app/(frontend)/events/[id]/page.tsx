@@ -115,7 +115,7 @@ const EventCard: React.FC<EventCardProps> = () => {
     setShowEditModal(true)
   }
   return (
-    <li className="w-full p-4 bg-gray-100 rounded-md shadow-[0px_0px_4px_rgba(0,0,0,0.25)]">
+    <li className="w-full p-4 bg-gray-100 rounded-md shadow-[0px_0px_4px_rgba(0,0,0,0.25)] pt-12 sm:pt-12">
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
       <AnimatePresence>
         {showEditModal && editingEvent && (
@@ -135,7 +135,7 @@ const EventCard: React.FC<EventCardProps> = () => {
       </Link>
       <br />
       <section className="">
-        <div className="flex items-center gap-4 w-full">
+        <div className="flex items-center gap-4 w-full ">
           <div className="flex flex-col gap-3 max-w-[500px]">
             {event.mediaUrls &&
               event.mediaUrls.length > 0 &&

@@ -1,9 +1,16 @@
 .kalendar-container {
-  margin: auto 0;
-  padding: 20px;
+  margin: 20px 0 0 0;
+  padding: 25px 2px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+@media screen and (max-width: 767px) {
+  .kalendar-container {
+    margin: 0;
+  }
+
 }
 
 .months-grid {
@@ -39,7 +46,7 @@
 
 .day {
   position: relative;
-  min-height: 100px;
+  min-height: 50px;
   padding: 8px;
   border: 1px solid #eee;
   transition: background 0.2s;
@@ -113,41 +120,65 @@
   }
 
 
-  .day {
-    padding: 8px;
-    background: #f0f0f0;
-    border-radius: 4px;
-    gap: 4px;
-    min-width: 0;
-    box-sizing: border-box;
-    /* Учитывает паддинги в размер */
-  }
 
   .weekday {
     background: #f0f0f0;
   }
 
   .day {
-    min-height: 60px;
+    min-height: 30px;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
+    background: #f0f0f0;
+    gap: 4px;
+    min-width: 0;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    /* Плавный переход */
 
-    &.active {
-      background: white;
-      cursor: pointer;
+    // &.active {
+    //   background: white;
+    //   cursor: pointer;
 
-      &:hover {
-        background: #f8f8f8;
-      }
-    }
+    //   &:hover {
+    //     background: #f8f8f8;
+    //   }
+    // }
 
     &.empty {
       border-color: transparent;
       background: transparent;
     }
+
+    &.weekend {
+
+
+      &.active {
+        background: #c6e0f8;
+        color: #0052cc;
+        font-weight: bold;
+
+        &:hover {
+          background: #b3d4ff;
+        }
+      }
+    }
+
+    &.sunday {
+      &.active {
+        background: #78b7f5;
+        color: #003d99;
+
+        &:hover {
+          background: #a3c9ff;
+        }
+      }
+    }
   }
 }
+
+
 
 @media (max-width: 768px) {
   .months-grid {
@@ -155,7 +186,7 @@
   }
 
   .kalendar-container {
-    margin: 150px auto 0;
+    margin: 30px auto 0;
   }
 }
 

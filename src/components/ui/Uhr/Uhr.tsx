@@ -6,7 +6,7 @@ const Uhr: React.FC = () => {
   const [time, setTime] = useState<string>('00:00:00')
   const [date, setDate] = useState<string>('')
   const [weekday, setWeekday] = useState<string>('')
-
+  const [isScrolled, setIsScrolled] = useState<boolean>(false)
   const updateTime = () => {
     const now = new Date()
     setTime(
@@ -38,8 +38,18 @@ const Uhr: React.FC = () => {
     const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  const handleScroll = () => {
+    const scrollPosition = window.scrollY
+    setIsScrolled(scrollPosition >= 50)
+  }
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   return (
-    <div className={`${styles.uhr} flex flex-col items-center`}>
+    <div className={`${styles.uhr} ${isScrolled ? styles.scrolled : ''} flex items-center gap-2`}>
       <div className="flex">
         <span className={styles['uhr-item']}>{time}</span>
       </div>
