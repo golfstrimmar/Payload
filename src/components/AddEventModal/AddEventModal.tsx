@@ -15,7 +15,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import LocationManager from '@/components/LocationManager/LocationManager'
 import { date } from 'node_modules/payload/dist/fields/validations'
-
+import ClockUhr from '@/components/ui/ClockUhr/ClockUhr'
+import Calendar from '@/components/ui/Calendar/Calendar'
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-md" />,
@@ -53,8 +54,10 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const [newEvent, setNewEvent] = useState({
     title: '',
     content: '',
-    time: '',
-    endDateTime: '',
+    date: '',
+    time: '00:00',
+    endDate: '',
+    endTime: '',
   })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
@@ -86,17 +89,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     })
   }
 
-  const parseDateTime = useCallback((dateTimeString: string): Date => {
-    try {
-      const date = new Date(dateTimeString)
-      if (isNaN(date.getTime())) throw new Error('Invalid date format')
-      return date
-    } catch (e) {
-      console.error('Error parsing date:', dateTimeString, e)
-      return new Date(NaN)
-    }
-  }, [])
-
   const handleSelectLocation = useCallback(
     (selectedLocation: {
       name: string
@@ -112,6 +104,20 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     [],
   )
   // -----------------------------
+  const parseDateTime = useCallback((dateString: string, timeString: string): Date => {
+    try {
+      if (!dateString || !timeString) throw new Error('Date or time missing')
+      const [year, month, day] = dateString.split('-').map(Number)
+      const [hours, minutes] = timeString.split(':').map(Number)
+      const date = new Date(year, month - 1, day, hours, minutes)
+      if (isNaN(date.getTime())) throw new Error('Invalid date format')
+      return date
+    } catch (e) {
+      console.error('Error parsing date:', dateString, timeString, e)
+      return new Date(NaN)
+    }
+  }, [])
+
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -156,8 +162,8 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       }
 
       const createdEvents: Event[] = []
-      if (newEvent.endDateTime) {
-        const endDate = parseDateTime(newEvent.endDateTime)
+      if (newEvent.endDate) {
+        const endDate = parseDateTime(newEvent.endDate, newEvent.endTime)
 
         if (isNaN(endDate.getTime())) throw new Error('Invalid end date format')
         if (endDate < selectedDate) throw new Error('End date must be after start date')
@@ -194,7 +200,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               title: createdEvent.title || eventData.title,
               content: createdEvent.content || eventData.content,
               date: createdEvent.date || eventData.date,
-              status: createdEvent.status || eventData.status,
               mediaUrls: createdEvent.mediaUrls || eventData.mediaUrls || [],
               location: createdEvent.location || eventData.location,
               user: {
@@ -320,6 +325,21 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     [locations, location, handleSelectLocation],
   )
 
+  // ---------------------
+  const handleDateChange = (date: Date) => {
+    console.log('<==== date ====>', date)
+    const newDate = new Date(date)
+    newDate.setHours(0, 0, 0, 0) // Обнуляем время для чистой даты
+    // Форматируем дату вручную для локального YYYY-MM-DD
+    const year = newDate.getFullYear()
+    const month = String(newDate.getMonth() + 1).padStart(2, '0') // Месяцы 0-11, добавляем 1
+    const day = String(newDate.getDate()).padStart(2, '0')
+    const formattedDate = `${year}-${month}-${day}` // Формат: 2025-05-18
+    console.log('<==== formattedDate ====>', formattedDate, typeof formattedDate)
+    setNewEvent((prev) => ({ ...prev, endDate: formattedDate }))
+  }
+  // ---------------------
+
   return (
     <AnimatePresence>
       {showLocationManager && (
@@ -336,6 +356,14 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4"
       >
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+        <Image
+          onClick={() => setShowCreateModal(false)}
+          src="/assets/svg/cross.svg"
+          alt="cross"
+          width={24}
+          height={24}
+          className="absolute top-4 right-4 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
+        />
         <motion.div
           initial={{ scale: 0, y: 0 }}
           animate={{ scale: 1, y: 0 }}
@@ -346,14 +374,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             onSubmit={handleCreateEvent}
             className="w-full relative mb-8 bg-white border border-gray-300 rounded-lg p-4"
           >
-            <Image
-              onClick={() => setShowCreateModal(false)}
-              src="/assets/svg/cross.svg"
-              alt="cross"
-              width={24}
-              height={24}
-              className="absolute top-4 right-4 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
-            />
             <h2 className="text-xl font-semibold mb-4">Create Event</h2>
             {/* -------------Title------------------ */}
             <div className="mb-4">
@@ -381,43 +401,55 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             </div>
             {/* -----------Date--------- */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Date</label>
-              <p className="mt-1 w-full p-2 border rounded-md bg-gray-100">
-                {new Date(selectedDay).toLocaleDateString('de-DE')}
-              </p>
+              <label className="block text-sm font-medium text-gray-700">
+                Date: {new Date(selectedDay).toLocaleDateString('de-DE')}
+              </label>
             </div>
             {/* --------------Start Time---------------- */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Start Time</label>
-              <input
-                type="time"
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Time: {newEvent.time}
+              </label>
+              <ClockUhr
                 value={newEvent.time}
                 onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-                required
-                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             {/* ---------------End Date and Time----------------- */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
-                End Date and Time (Optional)
+                End Date (Optional):
+                {newEvent.endDate
+                  ? new Date(newEvent.endDate).toLocaleDateString('de-DE', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                    })
+                  : 'Not Selected'}
               </label>
-              <input
-                type="datetime-local"
-                value={newEvent.endDateTime}
-                onChange={(e) => setNewEvent({ ...newEvent, endDateTime: e.target.value })}
-                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <label className="block text-sm font-medium text-gray-700">
+                End Time (Optional): {newEvent.endTime || 'Not Selected'}
+              </label>
+              <br className="my-1" />
+              <Calendar
+                selectedDay={new Date(newEvent.endDate)}
+                handleDateChange={handleDateChange}
+              />
+              <br className="my-1" />
+              <ClockUhr
+                value={newEvent.endTime}
+                onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
               />
             </div>
 
-            {/* ======Media====== */}
+            {/* ---------------Media---------------*/}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Add Media</label>
               <input
                 type="file"
                 multiple
                 onChange={handleFileChange}
-                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               />
             </div>
             {imagePreviews.length > 0 && (
