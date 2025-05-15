@@ -103,7 +103,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     },
     [],
   )
-
+  // ------------handleDeleteLocation------------
   const handleDeleteLocation = async (id: string) => {
     try {
       const response = await fetch(`/api/locations/${id}`, {
