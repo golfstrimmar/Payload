@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import dynamic from 'next/dynamic'
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useStateContext } from '@/components/StateProvaider'
+import { useLocationsContext } from '@/components/LocationsContext'
 import Image from 'next/image'
 
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
@@ -29,7 +29,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
   const [locationName, setLocationName] = useState('')
   const [coords, setCoords] = useState<[number, number] | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const { setFlagLocations } = useStateContext()
+  const { setFlagLocations } = useLocationsContext()
 
   const handleSaveLocation = async (e: React.FormEvent) => {
     e.preventDefault()

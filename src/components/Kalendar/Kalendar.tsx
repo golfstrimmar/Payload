@@ -244,7 +244,7 @@ const Kalendar: React.FC = () => {
                     <div className="flex items-center">
                       {event.mediaUrls.length > 0 && (
                         <img
-                          className="inline-block w-15 max-h-15 object-cover rounded-[50%] mr-2"
+                          className="inline-block w-15 max-h-15 object-cover rounded-[50%] mr-2 [box-shadow:_0_0_5px_#0542c4] border-2 border-[#cad8f7]"
                           src={event.mediaUrls?.[0]}
                           alt=""
                         />
