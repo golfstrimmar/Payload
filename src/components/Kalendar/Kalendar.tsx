@@ -212,7 +212,7 @@ const Kalendar: React.FC = () => {
                   handleAdd(date)
                 }
               }}
-              className={`${day ? 'day-number' : ''}`}
+              className={`${day ? 'day-number' : ''} cursor-pointer`}
             >
               {day || ''}
             </div>
@@ -240,7 +240,7 @@ const Kalendar: React.FC = () => {
                     }
                   `}
                 >
-                  <Link href={`/events/${event.id}`} className="inline-block w-full px-1 py-1">
+                  <Link href={`/events/${event.id}`} className="inline-block w-full px-1 py-1 ">
                     <strong>{event.title}</strong>
                     <br className="mb-1" />
                     {event.time?.split(':')[0] + ':' + event.time?.split(':')[1]}
@@ -301,11 +301,13 @@ const Kalendar: React.FC = () => {
         <div className="days-grid">
           <h3 className="text-[25px] mb-4 font-bold">{GERMAN_MONTHS[selectedMonth]}</h3>
           <div className="weekdays">
-            {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day) => (
-              <div key={day} className="weekday">
-                {day}
-              </div>
-            ))}
+            {['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'].map(
+              (day) => (
+                <div key={day} className="weekday">
+                  {day}
+                </div>
+              ),
+            )}
           </div>
           <div className="days">{renderDays}</div>
         </div>

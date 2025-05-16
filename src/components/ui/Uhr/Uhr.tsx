@@ -44,6 +44,7 @@ const Uhr: React.FC = () => {
     setIsScrolled(scrollPosition >= 30)
   }
   useEffect(() => {
+    handleScroll()
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])

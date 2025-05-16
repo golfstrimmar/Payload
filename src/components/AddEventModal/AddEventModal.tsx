@@ -399,7 +399,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             {/* ---------Content---------- */}
             <div className="mb-4">
               <Input
-                typeInput="text"
+                typeInput="textarea"
                 id="content"
                 data="Content"
                 name="content"
@@ -468,7 +468,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                   {imagePreviews.map((preview, index) => (
                     <div
                       key={`new-${index}`}
-                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md"
+                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden"
                     >
                       <img
                         src={preview}

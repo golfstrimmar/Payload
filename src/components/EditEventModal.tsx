@@ -84,6 +84,14 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
   )
   const [showLocationManager, setShowLocationManager] = useState(false)
 
+  // ----------------------
+  useEffect(() => {
+    if (existingMediaUrls) {
+      console.log('<==== existingMediaUrls====>', existingMediaUrls)
+    }
+  }, [existingMediaUrls])
+  // ----------------------
+
   // Обработка загрузки новых файлов
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -259,7 +267,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
         content: editedEvent.content,
         user: ID,
         date: selectedDate.toISOString(),
-        mediaUrls: allMediaUrls.length > 0 ? allMediaUrls : undefined,
+        mediaUrls: allMediaUrls.length > 0 ? allMediaUrls : [],
         location: location
           ? { coordinates: location.coordinates, address: location.address }
           : undefined,
@@ -374,7 +382,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
             {/* Content */}
             <div className="mb-4">
               <Input
-                typeInput="text"
+                typeInput="textarea"
                 id="content"
                 data="Content"
                 name="content"
@@ -449,7 +457,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                   {existingMediaUrls.map((url, index) => (
                     <div
                       key={`existing-${index}`}
-                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md"
+                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md  overflow-hidden"
                     >
                       <img
                         src={url}
@@ -459,7 +467,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveExistingImage(url)}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer"
                       >
                         ×
                       </button>
@@ -475,7 +483,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                   {imagePreviews.map((preview, index) => (
                     <div
                       key={`new-${index}`}
-                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md"
+                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md  overflow-hidden"
                     >
                       <img
                         src={preview}
@@ -485,7 +493,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                       <button
                         type="button"
                         onClick={() => handleRemoveNewImage(preview)}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer"
                       >
                         ×
                       </button>

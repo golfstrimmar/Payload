@@ -135,7 +135,7 @@ const EventCard: React.FC<EventCardProps> = () => {
       </Link>
       <br />
       <section className="">
-        <div className="flex items-center gap-4 w-full ">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full ">
           <div className="flex flex-col gap-3 max-w-[500px]">
             {event.mediaUrls &&
               event.mediaUrls.length > 0 &&
@@ -157,7 +157,7 @@ const EventCard: React.FC<EventCardProps> = () => {
                       setRun(null)
                     }}
                     className={` ${
-                      run === index ? 'block fixed top-4 right-4 z-500 cursor-pointer' : 'hidden'
+                      run === index ? 'block fixed top-24 right-4 z-500 cursor-pointer' : 'hidden'
                     }`}
                   >
                     <Image src="/assets/svg/cross.svg" width={20} height={20} alt="close" />
@@ -165,7 +165,7 @@ const EventCard: React.FC<EventCardProps> = () => {
                   <img
                     src={url}
                     alt={url}
-                    className={`aspect-cover min-h-[300px] ${
+                    className={` h-auto w-full ${
                       run === index
                         ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
                         : ''
@@ -174,18 +174,18 @@ const EventCard: React.FC<EventCardProps> = () => {
                 </div>
               ))}
           </div>
-          <div className="flex flex-col gap-3">
+          <div className=" flex-1  text-center  gap-3">
             <strong className="text-[30px]">{event.title}</strong>
-            <p className="text-[20px] my-2 text-gray-800 border border-gray-400 p-3">
+            <p className="mt-8  text-[20px] my-2 text-gray-800 border border-gray-400 p-3">
               {event.content}
             </p>
-            <h3 className="text-[25px]">{event.date}</h3>
+            <h3 className="mt-8  text-[25px]">{event.date}</h3>
             <h3 className="text-[25px]">
               {event.time.split(':')[0] + ':' + event.time.split(':')[1]}
             </h3>
-            <p className="text-sm text-gray-600">User: {event.user?.email}</p>
+            <p className="mt-8 text-sm text-gray-600">User: {event.user?.email}</p>
 
-            <div className="mt-auto flex gap-10">
+            <div className="mt-8 flex justify-center gap-10">
               <Image
                 onClick={() => handleEditEvent(event)}
                 src="/assets/svg/edit.svg"
