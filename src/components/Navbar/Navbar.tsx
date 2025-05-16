@@ -32,6 +32,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await fetch('/api/logout', { method: 'POST' })
+      setisOpen(false)
       setEvents([])
       setToken('')
       setUser('')
@@ -53,7 +54,8 @@ export default function Navbar() {
         <Uhr />
         <Burger handlerburgerClick={handlerburgerClick} isOpen={isOpen} />
         <div
-          className={`flex px-4 space-x-4  justify-between items-center menu ${isOpen ? 'run' : ''}`}
+          className={`flex px-4 space-x-4 py-2  justify-between items-center menu ${isOpen ? 'run' : ''}`}
+          onClick={() => setisOpen(false)}
         >
           <Link
             href="/"
@@ -63,20 +65,21 @@ export default function Navbar() {
           </Link>
 
           {isAuthenticated && (
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-1" onClick={() => setisOpen(false)}>
               <Link
                 href="/events"
                 className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/events' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}
               >
                 Events
               </Link>
-              <span className="text-[13px]">({length})</span>
+              <span className="text-blue-400">({length})</span>
             </div>
           )}
           {isAuthenticated && role === 'admin' && (
             <Link
               href="/admin"
               className={`  hover:text-blue-400 cursor-pointer transition-colors duration-200 ease-in-out ${activeLink === '/admin' ? 'underline  text-white text-shadow-[0_0_2px_rgba(0_0_0)] ' : 'text-blue-200'}`}
+              onClick={() => setisOpen(false)}
             >
               Admin
             </Link>
@@ -98,11 +101,19 @@ export default function Navbar() {
             </Link>
           )}
           {isAuthenticated && (
-            <div className=" grid grid-cols-[.5fr_2fr] person">
-              <span>user:</span>
-              <h2 className="text-blue-200 font-bold lh-1">{user}</h2>
-              <span>role:</span>
-              <p className="text-blue-200 font-bold lh-1">{role}</p>
+            <div className="person flex gap-4">
+              <div className=" grid grid-cols-[.5fr_2fr] gap-1 items-end">
+                <span className="text-blue-400   leading-none  ">user:</span>
+                <h2 className="text-white text-shadow-[0_0_2px_rgba(rgb(143_82_242))] leading-none">
+                  {user}
+                </h2>
+              </div>
+              <div className=" grid grid-cols-[.5fr_2fr] gap-1  items-end">
+                <span className="text-blue-400  leading-none">role:</span>
+                <p className="text-white text-shadow-[0_0_2px_rgba(rgb(143_82_242))]  leading-none">
+                  {role}
+                </p>
+              </div>
             </div>
           )}
         </div>
