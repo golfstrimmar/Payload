@@ -241,9 +241,20 @@ const Kalendar: React.FC = () => {
                   `}
                 >
                   <Link href={`/events/${event.id}`} className="inline-block w-full px-1 py-1 ">
-                    <strong>{event.title}</strong>
-                    <br className="mb-1" />
-                    {event.time?.split(':')[0] + ':' + event.time?.split(':')[1]}
+                    <div className="flex items-center">
+                      {event.mediaUrls.length > 0 && (
+                        <img
+                          className="inline-block w-15 max-h-15 object-cover rounded-[50%] mr-2"
+                          src={event.mediaUrls?.[0]}
+                          alt=""
+                        />
+                      )}
+                      <div>
+                        <strong>{event.title}</strong>
+                        <br className="mb-1" />
+                        {event.time?.split(':')[0] + ':' + event.time?.split(':')[1]}
+                      </div>
+                    </div>
                   </Link>
                 </div>
               ))}

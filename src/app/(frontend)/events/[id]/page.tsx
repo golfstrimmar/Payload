@@ -136,7 +136,7 @@ const EventCard: React.FC<EventCardProps> = () => {
       <br />
       <section className="">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full ">
-          <div className="flex flex-col gap-3 ">
+          <div className="flex flex-col gap-3 max-w-[400px]">
             {event.mediaUrls &&
               event.mediaUrls.length > 0 &&
               event.mediaUrls.map((url, index) => (
@@ -174,7 +174,7 @@ const EventCard: React.FC<EventCardProps> = () => {
                 </div>
               ))}
           </div>
-          <div className=" flex-1 w-full  text-center  gap-3">
+          <div className="   text-center  gap-3">
             <strong className="text-[30px]">{event.title}</strong>
             <p className="mt-8 w-full  text-[20px] my-2 text-gray-800 border border-gray-400 p-3 rounded">
               {event.content}

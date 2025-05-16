@@ -6,11 +6,14 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  webpack(config) {
+  webpack(config, { dev }) {
     config.module.rules.push({
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     })
+    // if (dev) {
+    //   config.devtool = 'source-map'
+    // }
     return config
   },
   typescript: {
