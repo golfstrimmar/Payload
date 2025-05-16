@@ -136,7 +136,7 @@ const EventCard: React.FC<EventCardProps> = () => {
       <br />
       <section className="">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 w-full ">
-          <div className="flex flex-col gap-3 max-w-[500px]">
+          <div className="flex flex-col gap-3 ">
             {event.mediaUrls &&
               event.mediaUrls.length > 0 &&
               event.mediaUrls.map((url, index) => (
@@ -165,27 +165,27 @@ const EventCard: React.FC<EventCardProps> = () => {
                   <img
                     src={url}
                     alt={url}
-                    className={` h-auto w-full ${
+                    className={`min-w-[300px]  ${
                       run === index
-                        ? 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
-                        : ''
+                        ? 'absolute !w-[80%] !h-[80%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+                        : 'w-[100%] h-[100%]'
                     }`}
                   />
                 </div>
               ))}
           </div>
-          <div className=" flex-1  text-center  gap-3">
+          <div className=" flex-1 w-full  text-center  gap-3">
             <strong className="text-[30px]">{event.title}</strong>
-            <p className="mt-8  text-[20px] my-2 text-gray-800 border border-gray-400 p-3">
+            <p className="mt-8 w-full  text-[20px] my-2 text-gray-800 border border-gray-400 p-3 rounded">
               {event.content}
             </p>
-            <h3 className="mt-8  text-[25px]">{event.date}</h3>
+            <h3 className="mt-4  text-[25px]">{event.date}</h3>
             <h3 className="text-[25px]">
               {event.time.split(':')[0] + ':' + event.time.split(':')[1]}
             </h3>
-            <p className="mt-8 text-sm text-gray-600">User: {event.user?.email}</p>
+            <p className="mt-4 text-sm text-gray-600">User: {event.user?.email}</p>
 
-            <div className="mt-8 flex justify-center gap-10">
+            <div className="mt-4 flex justify-center gap-10">
               <Image
                 onClick={() => handleEditEvent(event)}
                 src="/assets/svg/edit.svg"
@@ -206,8 +206,8 @@ const EventCard: React.FC<EventCardProps> = () => {
           </div>
         </div>
         {event.location && (
-          <div className="mt-4 h-148 col-span-full">
-            <h3 className="text-[25px]">Location name: {event.location.address}</h3>
+          <div className="mt-6 h-148 col-span-full">
+            <h3 className="text-sm text-gray-600"> Location name: {event.location.address}</h3>
             <EventMap initialPosition={event.location.coordinates} />
           </div>
         )}
