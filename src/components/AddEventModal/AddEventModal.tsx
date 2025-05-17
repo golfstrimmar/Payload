@@ -1,5 +1,4 @@
 'use client'
-
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import styles from './AddEventModal.module.scss'
 import Input from '@/components/ui/Input/Input'
@@ -9,14 +8,13 @@ import Image from 'next/image'
 import { useStateContext } from '@/components/StateProvaider'
 import { useUserContext } from '@/components/UserContext'
 import { useLocationsContext } from '@/components/LocationsContext'
-
 import toast, { Toaster } from 'react-hot-toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import LocationManager from '@/components/LocationManager/LocationManager'
-import { date } from 'node_modules/payload/dist/fields/validations'
 import ClockUhr from '@/components/ui/ClockUhr/ClockUhr'
 import Calendar from '@/components/ui/Calendar/Calendar'
+
 const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod.default), {
   ssr: false,
   loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-md" />,
@@ -32,15 +30,20 @@ interface Event {
   user?: { id: string; email?: string }
 }
 
+interface Media {
+  id: string
+  url: string
+  alt?: string
+  thumbnailURL?: string
+}
+
 interface AddEventModalProps {
   setShowCreateModal: (show: boolean) => void
   setEvents: (events: Event[]) => void
   currentUser: { id: string; email?: string } | null
   selectedDay: string
 }
-// ========================================
-// ========================================
-// ========================================
+
 const AddEventModal: React.FC<AddEventModalProps> = ({
   setShowCreateModal,
   setEvents,
@@ -60,26 +63,55 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     endTime: '',
   })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([])
+  const [savedMedia, setSavedMedia] = useState<Media[]>([])
+  const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([])
+  const [selectedMediaPreviews, setSelectedMediaPreviews] = useState<string[]>([])
   const [location, setLocation] = useState<{
     coordinates: [number, number]
     address: string
   } | null>(null)
   const [showLocationManager, setShowLocationManager] = useState(false)
 
+  // Загрузка медиа из Payload
+  useEffect(() => {
+    const fetchMedia = async () => {
+      try {
+        const response = await fetch('/api/media', {
+          headers: {
+            Authorization: `JWT ${token}`,
+          },
+        })
+        if (!response.ok) throw new Error('Failed to fetch media')
+        const data = await response.json()
+        const uniqueMedia = Array.from(
+          new Map(data.docs.map((item: Media) => [item.id, item])).values(),
+        )
+        setSavedMedia(uniqueMedia)
+        console.log('<==== savedMedia ====>', uniqueMedia)
+      } catch (err) {
+        console.error('Error fetching media:', err)
+        toast.error('Failed to load saved media')
+      }
+    }
+    if (token) fetchMedia()
+  }, [token])
+
+  // Обработка новых файлов с устройства
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
-      setSelectedFiles(filesArray)
+      setSelectedFiles((prev) => [...prev, ...filesArray])
       const previews = filesArray.map((file) => URL.createObjectURL(file))
-      setImagePreviews((prev) => [...prev, ...previews])
+      setNewImagePreviews((prev) => [...prev, ...previews])
     }
   }
 
+  // Удаление нового изображения
   const handleRemoveNewImage = (previewToRemove: string) => {
-    setImagePreviews((prev) => prev.filter((preview) => preview !== previewToRemove))
+    setNewImagePreviews((prev) => prev.filter((preview) => preview !== previewToRemove))
     setSelectedFiles((prev) => {
-      const index = imagePreviews.indexOf(previewToRemove)
+      const index = newImagePreviews.indexOf(previewToRemove)
       if (index !== -1) {
         const newFiles = [...prev]
         newFiles.splice(index, 1)
@@ -88,6 +120,104 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       return prev
     })
   }
+
+  // Выбор/удаление сохранённого медиа
+  const handleSelectSavedMedia = useCallback((mediaId: string, url: string) => {
+    console.log('<==== handleSelectSavedMedia ====>', { mediaId, url })
+    setSelectedMediaIds((prev) => {
+      if (prev.includes(mediaId)) {
+        setSelectedMediaPreviews((prevPreviews) => {
+          const newPreviews = prevPreviews.filter((p) => p !== url)
+          console.log('<==== Removing preview ====>', newPreviews)
+          return newPreviews
+        })
+        return prev.filter((id) => id !== mediaId)
+      } else {
+        setSelectedMediaPreviews((prevPreviews) => {
+          if (prevPreviews.includes(url)) return prevPreviews
+          const newPreviews = [...prevPreviews, url]
+          console.log('<==== Adding preview ====>', newPreviews)
+          return newPreviews
+        })
+        return [...prev, mediaId]
+      }
+    })
+  }, [])
+
+  // Удаление сохранённого медиа из выбранных
+  const handleRemoveSavedMedia = (url: string) => {
+    setSelectedMediaPreviews((prev) => prev.filter((preview) => preview !== url))
+    setSelectedMediaIds((prev) => {
+      const media = savedMedia.find((m) => m.url === url || m.thumbnailURL === url)
+      if (media) {
+        return prev.filter((id) => id !== media.id)
+      }
+      return prev
+    })
+  }
+
+  // UI для сохранённых медиа (только невыбранные)
+  const renderSavedMedia = useMemo(() => {
+    const availableMedia = savedMedia.filter((media) => !selectedMediaIds.includes(media.id))
+    return availableMedia.length > 0 ? (
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Available Media</h3>
+        <div className="flex flex-wrap gap-4">
+          {availableMedia.map((media) => (
+            <div
+              key={media.id}
+              className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden cursor-pointer shadow-custom-media"
+              onClick={() => handleSelectSavedMedia(media.id, media.thumbnailURL || media.url)}
+            >
+              <img
+                src={media.thumbnailURL || media.url}
+                alt={media.alt || 'Saved media'}
+                className="w-full h-full object-cover shadow-custom-inset"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <p className="text-gray-500 mb-4">No available media.</p>
+    )
+  }, [savedMedia, selectedMediaIds, handleSelectSavedMedia])
+
+  // UI для выбранных медиа (новые + сохранённые)
+  const renderSelectedMedia = useMemo(() => {
+    const allPreviews = [...newImagePreviews, ...selectedMediaPreviews]
+    console.log('<==== renderSelectedMedia previews ====>', allPreviews)
+    return allPreviews.length > 0 ? (
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Selected Media</h3>
+        <div className="flex flex-wrap gap-4">
+          {allPreviews.map((preview, index) => (
+            <div
+              key={`selected-${preview}-${index}`}
+              className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden shadow-custom-media"
+            >
+              <img
+                src={preview}
+                alt={`Preview ${index}`}
+                className="w-full h-full object-cover shadow-custom-inset"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  newImagePreviews.includes(preview)
+                    ? handleRemoveNewImage(preview)
+                    : handleRemoveSavedMedia(preview)
+                }
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null
+  }, [newImagePreviews, selectedMediaPreviews])
 
   const handleSelectLocation = useCallback(
     (selectedLocation: {
@@ -103,7 +233,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     },
     [],
   )
-  // ------------handleDeleteLocation------------
+
   const handleDeleteLocation = async (id: string) => {
     try {
       const response = await fetch(`/api/locations/${id}`, {
@@ -112,12 +242,10 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           Authorization: `JWT ${token}`,
         },
       })
-
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.message || 'Failed to delete location')
       }
-
       toast.success('Location deleted successfully')
       setFlagLocations((prev) => !prev)
     } catch (err: any) {
@@ -125,13 +253,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       toast.error(err.message || 'Failed to delete location')
     }
   }
-  // ----------------renderLocations------------------
+
   const renderLocations = useMemo(
     () =>
       locations.length > 0 ? (
         <div className="mb-2 rounded-md border border-gray-300 p-2">
           <h3 className="text-lg font-bold text-gray-700 mb-1">Saved Locations:</h3>
-          <div className="mb-2  rounded-md ">
+          <div className="mb-2 rounded-md">
             {locations.map((loc) => (
               <p
                 key={loc.id}
@@ -162,21 +290,18 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     [locations, location, handleSelectLocation],
   )
 
-  // ---------------------
   const handleDateChange = (date: Date) => {
     console.log('<==== date ====>', date)
     const newDate = new Date(date)
-    newDate.setHours(0, 0, 0, 0) // Обнуляем время для чистой даты
-    // Форматируем дату вручную для локального YYYY-MM-DD
+    newDate.setHours(0, 0, 0, 0)
     const year = newDate.getFullYear()
-    const month = String(newDate.getMonth() + 1).padStart(2, '0') // Месяцы 0-11, добавляем 1
+    const month = String(newDate.getMonth() + 1).padStart(2, '0')
     const day = String(newDate.getDate()).padStart(2, '0')
-    const formattedDate = `${year}-${month}-${day}` // Формат: 2025-05-18
+    const formattedDate = `${year}-${month}-${day}`
     console.log('<==== formattedDate ====>', formattedDate, typeof formattedDate)
     setNewEvent((prev) => ({ ...prev, endDate: formattedDate }))
   }
-  // ---------------------
-  // -----------------------------
+
   const parseDateTime = useCallback((dateString: string, timeString: string): Date => {
     try {
       if (!dateString || !timeString) throw new Error('Date or time missing')
@@ -204,6 +329,8 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 
     try {
       const mediaUrls: string[] = []
+
+      // Загрузка новых файлов
       for (const file of selectedFiles) {
         const formData = new FormData()
         formData.append('file', file)
@@ -218,6 +345,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         const data = await response.json()
         mediaUrls.push(data.url)
       }
+
+      // Добавление сохранённых медиа
+      const savedMediaUrls = savedMedia
+        .filter((media) => selectedMediaIds.includes(media.id))
+        .map((media) => media.url)
+      mediaUrls.push(...savedMediaUrls)
+      console.log('<==== mediaUrls ====>', mediaUrls)
 
       const selectedDate = new Date(selectedDay)
       const [hours, minutes] = newEvent.time.split(':').map(Number)
@@ -293,7 +427,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           ...eventBase,
           date: selectedDate.toISOString(),
         }
-        console.log('<====mediaUrls====>', mediaUrls)
         console.log('<==== eventData ====>', eventData)
 
         const response = await fetch('/api/events', {
@@ -336,7 +469,9 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       toast.success(`Event${createdEvents.length > 1 ? 's' : ''} created successfully`)
       setShowCreateModal(false)
       setSelectedFiles([])
-      setImagePreviews([])
+      setNewImagePreviews([])
+      setSelectedMediaIds([])
+      setSelectedMediaPreviews([])
       setLocation(null)
       setNewEvent({ title: '', content: '', date: '', time: '00:00', endDate: '', endTime: '' })
     } catch (err: any) {
@@ -347,7 +482,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       setTimeout(() => toast.dismiss(), 1500)
     }
   }
-  // -----------------------------
+
   return (
     <AnimatePresence>
       {showLocationManager && (
@@ -364,7 +499,6 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         className="w-[100vw] h-[100vh] fixed top-0 pt-20 sm:pt-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4"
       >
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-
         <motion.div
           initial={{ scale: 0, y: 0 }}
           animate={{ scale: 1, y: 0 }}
@@ -384,7 +518,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               className="absolute top-4 right-4 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
             />
             <h2 className="text-xl font-semibold mb-4">Create Event</h2>
-            {/* -------------Title------------------ */}
+            {/* Title */}
             <div className="mb-4">
               <Input
                 typeInput="text"
@@ -396,7 +530,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 required
               />
             </div>
-            {/* ---------Content---------- */}
+            {/* Content */}
             <div className="mb-4">
               <Input
                 typeInput="textarea"
@@ -408,13 +542,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 required
               />
             </div>
-            {/* -----------Date--------- */}
+            {/* Date */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
                 Date: {new Date(selectedDay).toLocaleDateString('de-DE')}
               </label>
             </div>
-            {/* --------------Start Time---------------- */}
+            {/* Start Time */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Start Time: {newEvent.time}
@@ -424,7 +558,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
               />
             </div>
-            {/* ---------------End Date and Time----------------- */}
+            {/* End Date and Time */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
                 End Date (Optional):
@@ -450,10 +584,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
               />
             </div>
-
-            {/* ---------------Media---------------*/}
+            {/* Media from Device */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Add Media</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Add Media from Device
+              </label>
               <input
                 type="file"
                 multiple
@@ -461,33 +596,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               />
             </div>
-            {imagePreviews.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">New Media</h3>
-                <div className="flex flex-wrap gap-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div
-                      key={`new-${index}`}
-                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden"
-                    >
-                      <img
-                        src={preview}
-                        alt={`Preview ${index}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveNewImage(preview)}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/*====== Location ======*/}
+            {/* Saved Media */}
+            {renderSavedMedia}
+            {/* Selected Media */}
+            {renderSelectedMedia}
+            {/* Location */}
             <div className="mb-4">
               <div className="flex gap-2 mb-2">
                 <button

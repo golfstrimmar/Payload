@@ -11,9 +11,9 @@ const nextConfig = {
       test: /\.svg$/,
       use: ['@svgr/webpack'],
     })
-    // if (dev) {
-    //   config.devtool = 'source-map'
-    // }
+    if (dev) {
+      config.devtool = 'source-map'
+    }
     return config
   },
   typescript: {
