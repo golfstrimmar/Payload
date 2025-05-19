@@ -167,14 +167,12 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             <div
               key={media.id}
               className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden cursor-pointer shadow-custom-media"
-              onClick={() => handleSelectSavedMedia(media.id, media.url)}
+              onClick={() => handleSelectSavedMedia(media.id, media.thumbnailURL || media.url)}
             >
               <img
-                src={media.url}
+                src={media.thumbnailURL || media.url}
                 alt={media.alt || 'Saved media'}
                 className="w-full h-full object-cover shadow-custom-inset"
-                onError={() => console.log('Failed to load image:', media.url)} // Логируем ошибку
-                onLoad={() => console.log('Image loaded:', media.url)} // Логируем успешную загрузку
               />
             </div>
           ))}
@@ -498,7 +496,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="w-[100vw] h-[100vh] fixed top-0 pt-20 sm:pt-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-100 p-4"
+        className="w-[100vw] h-[100vh] fixed top-0 pt-20 sm:pt-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-1000 p-4"
       >
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
         <motion.div
