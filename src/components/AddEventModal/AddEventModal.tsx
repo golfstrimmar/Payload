@@ -167,12 +167,14 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             <div
               key={media.id}
               className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden cursor-pointer shadow-custom-media"
-              onClick={() => handleSelectSavedMedia(media.id, media.thumbnailURL || media.url)}
+              onClick={() => handleSelectSavedMedia(media.id, media.url)}
             >
               <img
-                src={media.thumbnailURL || media.url}
+                src={media.url}
                 alt={media.alt || 'Saved media'}
                 className="w-full h-full object-cover shadow-custom-inset"
+                onError={() => console.log('Failed to load image:', media.url)} // Логируем ошибку
+                onLoad={() => console.log('Image loaded:', media.url)} // Логируем успешную загрузку
               />
             </div>
           ))}
