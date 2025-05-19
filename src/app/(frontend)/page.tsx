@@ -62,9 +62,9 @@ export default async function HomePage() {
 
         <section className="w-full mt-4 mb-4 shadow-[0px_0px_4px_rgba(0,0,0,0.25)] rounded-sm p-2">
           <h2 className="text-2xl font-bold">Media Files</h2>
-          <div className="w-full flex flex-col p-2">
+          <div className="w-full flex flex-col gap-2 p-2">
             {media.docs.map((file) => (
-              <div key={file.id} className="flex gap-8">
+              <div key={file.id} className="flex gap-2">
                 {file.mimeType?.includes('image') ? (
                   <Image
                     src={file.url}
