@@ -515,7 +515,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               alt="cross"
               width={24}
               height={24}
-              className="absolute top-4 right-4 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
+              className="absolute top-2 right-2 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
             />
             <h2 className="text-xl font-semibold mb-4">Create Event</h2>
             {/* Title */}

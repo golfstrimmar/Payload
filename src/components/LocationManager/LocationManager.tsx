@@ -99,32 +99,34 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="w-[100vw] h-[100vh] fixed top-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-200 p-4"
+        className="w-[100vw] h-[100vh] fixed top-0 pt-20 sm:pt-0 left-0 flex justify-center items-center bg-[rgba(0,0,0,.95)] z-200 p-4"
       >
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
         <motion.div
           initial={{ scale: 0, y: 0 }}
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.9, y: 20 }}
-          className="w-full h-full  bg-white border border-gray-300 rounded-lg p-4"
+          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white border border-gray-300 rounded-lg p-1 sm:p-4"
         >
-          <Image
-            onClick={onClose}
-            src="/assets/svg/cross.svg"
-            alt="cross"
-            width={24}
-            height={24}
-            className="absolute top-4 right-4 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
-          />
-          <form onSubmit={handleSaveLocation}>
-            <div className="mb-4  h-160 ">
-              <EventMap
-                interactive
-                onLocationSelect={(coords) => setCoords(coords)}
-                selectedLocation={coords}
-              />
-            </div>
-            <div className="mb-4">
+          <form
+            onSubmit={handleSaveLocation}
+            className="w-full relative mb-8 bg-white border border-gray-300 rounded-lg p-1 sm:p-4 grid place-items-center grid-rows-[8fr_1fr_1fr] gap-2"
+          >
+            <Image
+              onClick={onClose}
+              src="/assets/svg/cross.svg"
+              alt="cross"
+              width={24}
+              height={24}
+              className="absolute top-1 right-1 cursor-pointer z-50 border border-gray-300 rounded-full p-1 hover:bg-gray-200 transition-all duration-200"
+            />
+            <EventMap
+              interactive
+              onLocationSelect={(coords) => setCoords(coords)}
+              selectedLocation={coords}
+            />
+
+            <div className="w-full">
               <input
                 type="text"
                 value={locationName}
@@ -137,7 +139,7 @@ const LocationManager: React.FC<LocationManagerProps> = ({ token, userId, onClos
             <button
               type="submit"
               disabled={isLoading}
-              className={`px-4 py-2 bg-blue-500 text-white cursor-pointer rounded-md hover:bg-blue-600 transition ${
+              className={`px-4 py-2 w-full bg-blue-500 text-white cursor-pointer rounded-md hover:bg-blue-600 transition ${
                 isLoading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
