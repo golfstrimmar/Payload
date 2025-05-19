@@ -67,7 +67,7 @@ export default async function HomePage() {
               <div key={file.id} className="flex gap-2">
                 {file.mimeType?.includes('image') ? (
                   <Image
-                    src={file.url}
+                    src={file.url} // Используем Cloudinary URL напрямую
                     alt={file.alt || 'Media file'}
                     width={200}
                     height={150}
