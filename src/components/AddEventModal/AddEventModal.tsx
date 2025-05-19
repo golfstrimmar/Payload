@@ -84,11 +84,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         })
         if (!response.ok) throw new Error('Failed to fetch media')
         const data = await response.json()
-        const uniqueMedia = Array.from(
-          new Map(data.docs.map((item: Media) => [item.id, item])).values(),
-        )
-        setSavedMedia(uniqueMedia)
-        console.log('<==== savedMedia ====>', uniqueMedia)
+        // const uniqueMedia = Array.from(
+        //   new Map(data.docs.map((item: Media) => [item.id, item])).values(),
+        // )
+        setSavedMedia(data.docs)
+        console.log('<==== savedMedia ====>', data.docs)
       } catch (err) {
         console.error('Error fetching media:', err)
         toast.error('Failed to load saved media')
@@ -158,7 +158,8 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 
   // UI для сохранённых медиа (только невыбранные)
   const renderSavedMedia = useMemo(() => {
-    const availableMedia = savedMedia.filter((media) => !selectedMediaIds.includes(media.id))
+    const availableMedia = savedMedia
+    // .filter((media) => !selectedMediaIds.includes(media.id))
     return availableMedia.length > 0 ? (
       <div className="mb-4">
         <h3 className="text-sm font-medium text-gray-700 mb-2">Available Media</h3>
