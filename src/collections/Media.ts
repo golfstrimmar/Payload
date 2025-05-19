@@ -1,46 +1,52 @@
 import { CollectionConfig } from 'payload/types'
-import cloudinary from 'cloudinary'
-import { v2 as cloudinaryV2 } from 'cloudinary'
+import { v2 as cloudinary } from 'cloudinary'
 import streamifier from 'streamifier'
 
-// Кастомная функция загрузки в Cloudinary
-const cloudinaryUpload = (fileBuffer, options) => {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinaryV2.uploader.upload_stream(
-      { ...options, folder: 'your-app-name' },
-      (error, result) => {
-        if (error) return reject(error)
-        resolve(result)
-      },
-    )
-    streamifier.createReadStream(fileBuffer).pipe(uploadStream)
-  })
-}
+// Настройка Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+})
 
 export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
-    staticURL: '/media',
-    staticDir: 'media',
     imageSizes: [
-      { name: 'thumbnail', width: 400, height: 300, crop: 'fit' },
-      { name: 'card', width: 768, height: 576, crop: 'fit' },
+      { name: 'thumbnail', width: 400, height: 300 },
+      { name: 'card', width: 768, height: 576 },
     ],
+    disableLocalStorage: true, // Отключаем локальное хранилище (важно для Vercel)
     mimeTypes: ['image/*'],
+    adminThumbnail: ({ doc }) => doc.url || '',
   },
   hooks: {
     beforeChange: [
       async ({ data, req }) => {
         if (req.files?.file) {
           const file = req.files.file
-          const result = await cloudinaryUpload(file.buffer, {
-            public_id: file.filename,
-            resource_type: 'image',
+
+          // Загрузка в Cloudinary через Stream
+          const result = await new Promise((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+              {
+                folder: process.env.CLOUDINARY_FOLDER || 'payload-uploads',
+                resource_type: 'auto',
+              },
+              (error, result) => {
+                if (error) reject(error)
+                else resolve(result)
+              },
+            )
+
+            streamifier.createReadStream(file.data).pipe(uploadStream)
           })
+
           return {
             ...data,
             url: result.secure_url,
-            thumbnailURL: result.secure_url.replace('/upload/', '/upload/w_400,h_300,c_fit/'),
+            filename: file.name,
           }
         }
         return data
@@ -48,8 +54,15 @@ export const Media: CollectionConfig = {
     ],
   },
   fields: [
-    { name: 'url', type: 'text', required: true },
-    { name: 'thumbnailURL', type: 'text' },
-    { name: 'alt', type: 'text' },
+    {
+      name: 'url',
+      type: 'text',
+      required: true,
+    },
+    {
+      name: 'alt',
+      type: 'text',
+      required: true,
+    },
   ],
 }
