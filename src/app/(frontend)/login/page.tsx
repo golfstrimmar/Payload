@@ -52,7 +52,7 @@ export default function LoginPage() {
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
       {isLoading && <Loading />}
       <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
-      <h1 className="text-2xl font-bold mb-6">{isRegister ? 'Register' : 'Login'}</h1>
+      <h1 className="text-sm font-bold mb-4">{isRegister ? 'Register' : 'Login'}</h1>
       {error && <p className="text-red-500 mb-4">{error}</p>}
       <form onSubmit={handleSubmit}>
         <div className="mb-4">

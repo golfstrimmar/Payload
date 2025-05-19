@@ -50,11 +50,11 @@ export default function Navbar() {
 
   return (
     <nav className="bg-blue-600 header">
-      <div className="w-full  ">
+      <div className="w-full flex justify-end px-2">
         <Uhr />
         <Burger handlerburgerClick={handlerburgerClick} isOpen={isOpen} />
         <div
-          className={`flex px-4 space-x-4 py-2  justify-between items-center menu ${isOpen ? 'run' : ''}`}
+          className={`flex px-4 space-x-4 py-2   items-center menu ${isOpen ? 'run' : ''}`}
           onClick={() => setisOpen(false)}
         >
           <Link

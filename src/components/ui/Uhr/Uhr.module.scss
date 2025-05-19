@@ -5,40 +5,19 @@
   border: 2px solid #e3e3e3;
   border-radius: 30px;
   box-shadow: inset 0 0 10px #4e0c0c, 0 0 10px #6d6d6cc7;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+
   min-width: 180px;
-  padding: 3px 25px;
+  padding: 5px 10px;
   position: fixed;
-  top: 40px;
+  top: 0;
   z-index: 2000;
   transition: all .2s ease-in-out;
 
   &-item {
-    font-size: 25px;
     font-weight: bold;
     color: $blue6;
   }
 
 
-}
-
-.scrolled {
-  top: 0px;
-}
-
-@media (min-width: 768px)and (max-width: 1024px) {
-  .uhr {
-    top: 30px;
-  }
-}
-
-@media screen and (max-width: 767px) {
-  .uhr {
-    top: 30px;
-  }
-
-  .scrolled {
-    top: 0px;
-  }
 }

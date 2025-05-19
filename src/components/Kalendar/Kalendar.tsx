@@ -278,25 +278,17 @@ const Kalendar: React.FC = () => {
           />
         )}
       </AnimatePresence>
-      <div>
-        <div className="flex justify-between mb-4">
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out cursor-pointer"
-          >
-            Delete Events
-          </button>
-        </div>
-        <AnimatePresence>
-          {showDeleteModal && (
-            <DeleteEventsModal
-              events={events}
-              setEvents={setEvents}
-              setShowDeleteModal={setShowDeleteModal}
-            />
-          )}
-        </AnimatePresence>
-      </div>
+
+      <AnimatePresence>
+        {showDeleteModal && (
+          <DeleteEventsModal
+            events={events}
+            setEvents={setEvents}
+            setShowDeleteModal={setShowDeleteModal}
+          />
+        )}
+      </AnimatePresence>
+
       <div className="months-grid">
         {GERMAN_MONTHS.map((month, index) => (
           <button
@@ -323,6 +315,14 @@ const Kalendar: React.FC = () => {
           <div className="days">{renderDays}</div>
         </div>
       )}
+      <div className="flex justify-between mt-4">
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition duration-300 ease-in-out cursor-pointer"
+        >
+          Delete Events
+        </button>
+      </div>
     </div>
   )
 }
