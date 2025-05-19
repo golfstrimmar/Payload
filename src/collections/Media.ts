@@ -13,13 +13,9 @@ cloudinary.config({
 export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
-    imageSizes: [
-      { name: 'thumbnail', width: 400, height: 300 },
-      { name: 'card', width: 768, height: 576 },
-    ],
-    disableLocalStorage: true, // Отключаем локальное хранилище (важно для Vercel)
+    disableLocalStorage: true, // Важно для Vercel
+    adminThumbnail: ({ doc }) => doc.cloudinaryURL || '',
     mimeTypes: ['image/*'],
-    adminThumbnail: ({ doc }) => doc.url || '',
   },
   hooks: {
     beforeChange: [
@@ -27,12 +23,15 @@ export const Media: CollectionConfig = {
         if (req.files?.file) {
           const file = req.files.file
 
-          // Загрузка в Cloudinary через Stream
+          // Загрузка в Cloudinary
           const result = await new Promise((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
               {
-                folder: process.env.CLOUDINARY_FOLDER || 'payload-uploads',
-                resource_type: 'auto',
+                folder: process.env.CLOUDINARY_FOLDER || 'payload-media',
+                transformation: [
+                  { width: 2000, height: 2000, crop: 'limit' }, // Основное изображение
+                  { width: 400, height: 300, crop: 'fill', quality: 'auto', fetch_format: 'auto' }, // Для thumbnail
+                ],
               },
               (error, result) => {
                 if (error) reject(error)
@@ -45,8 +44,14 @@ export const Media: CollectionConfig = {
 
           return {
             ...data,
-            url: result.secure_url,
-            filename: file.name,
+            cloudinaryURL: result.secure_url,
+            thumbnailURL: cloudinary.url(result.public_id, {
+              width: 400,
+              height: 300,
+              crop: 'fill',
+              quality: 'auto',
+              fetch_format: 'auto',
+            }),
           }
         }
         return data
@@ -55,9 +60,13 @@ export const Media: CollectionConfig = {
   },
   fields: [
     {
-      name: 'url',
+      name: 'cloudinaryURL',
       type: 'text',
       required: true,
+    },
+    {
+      name: 'thumbnailURL',
+      type: 'text',
     },
     {
       name: 'alt',
