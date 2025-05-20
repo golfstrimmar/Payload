@@ -21,6 +21,13 @@ const EventMap = dynamic(() => import('@/components/EventMap').then((mod) => mod
   loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-md" />,
 })
 
+interface Media {
+  id: string
+  url: string
+  alt?: string
+  thumbnailURL?: string
+}
+
 interface Event {
   id: string
   title: string
@@ -64,13 +71,16 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
     title: initialEvent.title || '',
     content: initialEvent.content || '',
     date: new Date(initialEvent.date).toISOString().split('T')[0],
-    time: initialEvent.time,
+    time: initialEvent.time || '00:00',
     endDate: '',
     endTime: '',
   })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
   const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>(initialEvent.mediaUrls || [])
+  const [savedMedia, setSavedMedia] = useState<Media[]>([])
+  const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([])
+  const [selectedMediaPreviews, setSelectedMediaPreviews] = useState<string[]>([])
   const [location, setLocation] = useState<{
     coordinates: [number, number]
     address: string
@@ -84,19 +94,48 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
   )
   const [showLocationManager, setShowLocationManager] = useState(false)
 
-  // ----------------------
+  // Загрузка медиа из Payload
+  useEffect(() => {
+    const fetchMedia = async () => {
+      try {
+        const response = await fetch('/api/media', {
+          headers: {
+            Authorization: `JWT ${token}`,
+          },
+        })
+        if (!response.ok) throw new Error('Failed to fetch media')
+        const data = await response.json()
+        const uniqueMedia = Array.from(
+          new Map(data.docs.map((item: Media) => [item.id, item])).values(),
+        )
+        setSavedMedia(uniqueMedia)
+        console.log('<==== savedMedia ====>', uniqueMedia)
+
+        // Инициализация selectedMediaIds и selectedMediaPreviews на основе existingMediaUrls
+        const initialMediaIds = uniqueMedia
+          .filter((media) => existingMediaUrls.includes(media.url))
+          .map((media) => media.id)
+        setSelectedMediaIds(initialMediaIds)
+        setSelectedMediaPreviews(existingMediaUrls)
+      } catch (err) {
+        console.error('Error fetching media:', err)
+        toast.error('Failed to load saved media')
+      }
+    }
+    if (token) fetchMedia()
+  }, [token, existingMediaUrls])
+
   useEffect(() => {
     if (existingMediaUrls) {
-      console.log('<==== existingMediaUrls====>', existingMediaUrls)
+      console.log('<==== existingMediaUrls ====>', existingMediaUrls)
     }
   }, [existingMediaUrls])
-  // ----------------------
 
   // Обработка загрузки новых файлов
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files)
-      setSelectedFiles(filesArray)
+      setSelectedFiles((prev) => [...prev, ...filesArray])
       const previews = filesArray.map((file) => URL.createObjectURL(file))
       setImagePreviews((prev) => [...prev, ...previews])
     }
@@ -119,7 +158,106 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
   // Удаление существующего изображения
   const handleRemoveExistingImage = (urlToRemove: string) => {
     setExistingMediaUrls((prev) => prev.filter((url) => url !== urlToRemove))
+    setSelectedMediaPreviews((prev) => prev.filter((url) => url !== urlToRemove))
+    setSelectedMediaIds((prev) => {
+      const media = savedMedia.find((m) => m.url === urlToRemove || m.thumbnailURL === urlToRemove)
+      if (media) {
+        return prev.filter((id) => id !== media.id)
+      }
+      return prev
+    })
   }
+
+  // Выбор/удаление сохранённого медиа
+  const handleSelectSavedMedia = useCallback((mediaId: string, url: string) => {
+    console.log('<==== handleSelectSavedMedia ====>', { mediaId, url })
+    setSelectedMediaIds((prev) => {
+      if (prev.includes(mediaId)) {
+        setSelectedMediaPreviews((prevPreviews) => {
+          const newPreviews = prevPreviews.filter((p) => p !== url)
+          console.log('<==== Removing preview ====>', newPreviews)
+          return newPreviews
+        })
+        setExistingMediaUrls((prev) => prev.filter((u) => u !== url))
+        return prev.filter((id) => id !== mediaId)
+      } else {
+        setSelectedMediaPreviews((prevPreviews) => {
+          if (prevPreviews.includes(url)) return prevPreviews
+          const newPreviews = [...prevPreviews, url]
+          console.log('<==== Adding preview ====>', newPreviews)
+          return newPreviews
+        })
+        setExistingMediaUrls((prev) => {
+          if (prev.includes(url)) return prev
+          return [...prev, url]
+        })
+        return [...prev, mediaId]
+      }
+    })
+  }, [])
+
+  // UI для сохранённых медиа (только невыбранные)
+  const renderSavedMedia = useMemo(() => {
+    const availableMedia = savedMedia.filter((media) => !selectedMediaIds.includes(media.id))
+    return availableMedia.length > 0 ? (
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Available Media</h3>
+        <div className="flex flex-wrap gap-4">
+          {availableMedia.map((media) => (
+            <div
+              key={media.id}
+              className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden cursor-pointer shadow-custom-media"
+              onClick={() => handleSelectSavedMedia(media.id, media.thumbnailURL || media.url)}
+            >
+              <img
+                src={media.thumbnailURL || media.url}
+                alt={media.alt || 'Saved media'}
+                className="w-full h-full object-cover shadow-custom-inset"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <p className="text-gray-500 mb-4">No available media.</p>
+    )
+  }, [savedMedia, selectedMediaIds, handleSelectSavedMedia])
+
+  // UI для выбранных медиа (новые + предсохранённые)
+  const renderSelectedMedia = useMemo(() => {
+    const allPreviews = [...imagePreviews, ...selectedMediaPreviews]
+    console.log('<==== renderSelectedMedia previews ====>', allPreviews)
+    return allPreviews.length > 0 ? (
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Selected Media</h3>
+        <div className="flex flex-wrap gap-4">
+          {allPreviews.map((preview, index) => (
+            <div
+              key={`selected-${preview}-${index}`}
+              className="relative w-24 h-24 bg-gray-200 p-2 rounded-md overflow-hidden shadow-custom-media"
+            >
+              <img
+                src={preview}
+                alt={`Preview ${index}`}
+                className="w-full h-full object-cover shadow-custom-inset"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  imagePreviews.includes(preview)
+                    ? handleRemoveNewImage(preview)
+                    : handleRemoveExistingImage(preview)
+                }
+                className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : null
+  }, [imagePreviews, selectedMediaPreviews])
 
   // Выбор локации
   const handleSelectLocation = useCallback(
@@ -253,7 +391,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
         newMediaUrls.push(data.url)
       }
 
-      // Объединяем существующие и новые URL
+      // Объединяем существующие, новые и предсохранённые URL
       const allMediaUrls = [...existingMediaUrls, ...newMediaUrls]
 
       // Формируем дату
@@ -313,6 +451,8 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
       setShowEditModal(false)
       setSelectedFiles([])
       setImagePreviews([])
+      setSelectedMediaIds([])
+      setSelectedMediaPreviews([])
       setLocation(null)
       setEditedEvent({
         title: '',
@@ -391,7 +531,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                 required
               />
             </div>
-            {/* ===========Start Date============ */}
+            {/* Start Date */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
                 Date:{' '}
@@ -404,7 +544,7 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                 handleDateChange={(date) => handleDateChange(date, 'date')}
               />
             </div>
-            {/*=============== Start Time =============*/}
+            {/* Start Time */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Start Time: {editedEvent.time}
@@ -450,58 +590,10 @@ const EditEventModal: React.FC<EditEventModalProps> = ({
                 className="mt-1 w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               />
             </div>
-            {existingMediaUrls.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Existing Media</h3>
-                <div className="flex flex-wrap gap-4">
-                  {existingMediaUrls.map((url, index) => (
-                    <div
-                      key={`existing-${index}`}
-                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md  overflow-hidden"
-                    >
-                      <img
-                        src={url}
-                        alt={`Existing ${index}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveExistingImage(url)}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {imagePreviews.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">New Media</h3>
-                <div className="flex flex-wrap gap-4">
-                  {imagePreviews.map((preview, index) => (
-                    <div
-                      key={`new-${index}`}
-                      className="relative w-24 h-24 bg-gray-200 p-2 rounded-md  overflow-hidden"
-                    >
-                      <img
-                        src={preview}
-                        alt={`Preview ${index}`}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveNewImage(preview)}
-                        className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Saved Media */}
+            {renderSavedMedia}
+            {/* Selected Media (существующие, новые, предсохранённые) */}
+            {renderSelectedMedia}
             {/* Location */}
             <div className="mb-4">
               <div className="flex gap-2 mb-2">
