@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
 import { Users } from './collections/Users'
-import { Media } from './collections/Media' // Используем нашу обновлённую Media
+import { Media } from './collections/Media'
 import { Events } from './collections/Events'
 import { Locations } from './collections/Locations'
 
@@ -18,7 +18,7 @@ export default buildConfig({
     user: Users.slug,
     access: ({ req: { user } }) => user?.role === 'admin',
   },
-  collections: [Users, Media, Events, Locations], // Media уже содержит Cloudinary логику
+  collections: [Users, Media, Events, Locations],
 
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
@@ -33,5 +33,5 @@ export default buildConfig({
     },
   }),
 
-  sharp, // Можно оставить для других операций
+  sharp,
 })

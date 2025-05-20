@@ -4,8 +4,8 @@ import { CollectionConfig } from 'payload/types'
 export const Media: CollectionConfig = {
   slug: 'media',
   upload: {
-    staticURL: '/media',
-    staticDir: 'media',
+    staticURL: '/media', // URL остаётся таким же
+    staticDir: 'public/media', // Новый путь к папке
     mimeTypes: ['image/*'],
     adminThumbnail: ({ doc }) => doc.url || '',
   },
