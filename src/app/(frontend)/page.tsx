@@ -30,7 +30,10 @@ export default async function HomePage() {
   })
 
   const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
-
+  console.log(
+    '<==== Media URLs ====>',
+    media.docs.map((doc) => ({ id: doc.id, url: doc.url })),
+  )
   return (
     <div className="home">
       <div className="content">
@@ -66,13 +69,16 @@ export default async function HomePage() {
             {media.docs.map((file) => (
               <div key={file.id} className="flex gap-2">
                 {file.mimeType?.includes('image') ? (
-                  <Image
-                    src={file.url}
-                    alt={file.alt || 'Media file'}
-                    width={200}
-                    height={150}
-                    style={{ objectFit: 'cover' }}
-                  />
+                  <>
+                    <h3>{file.url}</h3>
+                    <Image
+                      src={file.url}
+                      alt={file.alt || 'Media file'}
+                      width={200}
+                      height={150}
+                      style={{ objectFit: 'cover' }}
+                    />
+                  </>
                 ) : (
                   <div className="file-placeholder">
                     <span>{file.filename}</span>
