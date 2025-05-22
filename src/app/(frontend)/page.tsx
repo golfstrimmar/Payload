@@ -26,10 +26,10 @@ export default async function HomePage() {
 
   const media = await payload.find({
     collection: 'media',
-    limit: 10,
+    limit: 1000,
   })
 
-  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
+  // const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
   console.log(
     '<==== Media URLs ====>',
     media.docs.map((doc) => ({ id: doc.id, url: doc.url })),
@@ -54,10 +54,10 @@ export default async function HomePage() {
           <h2 className="text-2xl font-bold">Users</h2>
           <div className=" flex flex-col  w-full">
             {users.docs.map((user) => (
-              <div key={user.id} className="m-4   p-2 bg-white rounded-lg shadow-md">
-                <h3>{user.email}</h3>
-                <p>ID: {user.id}</p>
-                {user.role && <p>Role: {user.role}</p>}
+              <div key={user?.id} className="m-4   p-2 bg-white rounded-lg shadow-md">
+                <h3>{user?.email}</h3>
+                <p>ID: {user?.id}</p>
+                {user?.role && <p>Role: {user?.role}</p>}
               </div>
             ))}
           </div>
