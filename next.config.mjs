@@ -31,6 +31,11 @@ const nextConfig = {
         hostname: 'res.cloudinary.com',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'timetable-neon.vercel.app',
+        pathname: '/media/**',
+      },
     ],
   },
 }
