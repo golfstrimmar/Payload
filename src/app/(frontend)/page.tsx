@@ -1,3 +1,4 @@
+// app/(frontend)/page.tsx
 import { headers as getHeaders } from 'next/headers'
 import Image from 'next/image'
 import { getPayload } from 'payload'
@@ -29,11 +30,12 @@ export default async function HomePage() {
     limit: 1000,
   })
 
-  // const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
+  const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
   console.log(
     '<==== Media URLs ====>',
     media.docs.map((doc) => ({ id: doc.id, url: doc.url })),
   )
+
   return (
     <div className="home">
       <div className="content">
@@ -52,9 +54,9 @@ export default async function HomePage() {
 
         <section className="w-full shadow-[0px_0px_4px_rgba(0,0,0,0.25)] rounded-sm p-2">
           <h2 className="text-2xl font-bold">Users</h2>
-          <div className=" flex flex-col  w-full">
+          <div className="flex flex-col w-full">
             {users.docs.map((user) => (
-              <div key={user?.id} className="m-4   p-2 bg-white rounded-lg shadow-md">
+              <div key={user?.id} className="m-4 p-2 bg-white rounded-lg shadow-md">
                 <h3>{user?.email}</h3>
                 <p>ID: {user?.id}</p>
                 {user?.role && <p>Role: {user?.role}</p>}
@@ -77,6 +79,9 @@ export default async function HomePage() {
                       width={200}
                       height={150}
                       style={{ objectFit: 'cover' }}
+                      onError={(e) =>
+                        console.error(`Failed to load image: ${file.url}, error: ${e.message}`)
+                      }
                     />
                   </>
                 ) : (

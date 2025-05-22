@@ -19,7 +19,15 @@ export default buildConfig({
     access: ({ req: { user } }) => user?.role === 'admin',
   },
   collections: [Users, Media, Events, Locations],
-
+  plugins: [
+    cloudinaryAdapter({
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      apiSecret: process.env.CLOUDINARY_API_SECRET,
+      generateURL: (path) =>
+        `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${path}`,
+    }),
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
