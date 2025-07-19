@@ -1,4 +1,3 @@
-// app/(frontend)/page.tsx
 import { headers as getHeaders } from 'next/headers'
 import Image from 'next/image'
 import { getPayload } from 'payload'
@@ -65,7 +64,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="w-full mt-4 mb-4 shadow-[0px_0px_4px_rgba(0,0,0,0.25)] rounded-sm p-2">
+        {/* <section className="w-full mt-4 mb-4 shadow-[0px_0px_4px_rgba(0,0,0,0.25)] rounded-sm p-2">
           <h2 className="text-2xl font-bold">Media Files</h2>
           <div className="w-full flex flex-col gap-2 p-2">
             {media.docs.map((file) => (
@@ -93,7 +92,7 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
-        </section>
+        </section> */}
 
         <div className="links">
           <a
