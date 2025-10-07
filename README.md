@@ -1,3 +1,13 @@
+DATABASE_URI postgresql://Timetable_owner:npg_esvLr5dNRYm3@ep-billowing-field-a2eakahi-pooler.eu-central-1.aws.neon.tech/Timetable?sslmode=require&channel_binding=require
+PAYLOAD_SECRET de106e556da1dd74595f610e
+CLOUDINARY_CLOUD_NAME dke0nudcz
+CLOUDINARY_API_KEY 125957593299356
+CLOUDINARY_API_SECRET GUEplX6OFLU7oTwpe4IGFdf_V4w
+CLOUDINARY_UPLOAD_PRESET events_upload
+
+
+
+
 # Payload Blank Template
 
 This template comes configured with the bare minimum to get started on anything you need.
